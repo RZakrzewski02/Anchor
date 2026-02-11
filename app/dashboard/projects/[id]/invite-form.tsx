@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { UserPlus, Loader2 } from 'lucide-react'
-import { inviteMember } from './invite-action'
+import { inviteMember } from './invite-actions'
 
 export default function InviteForm({ projectId }: { projectId: string }) {
   const [isLoading, setIsLoading] = useState(false)

@@ -98,6 +98,25 @@ export default function NewTaskButton({
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Start</label>
+                  <input 
+                    type="date" 
+                    name="start_date" 
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" 
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Koniec</label>
+                  <input 
+                    type="date" 
+                    name="end_date" 
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" 
+                  />
+                </div>
+              </div>
+
               {/* Przypisanie */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
