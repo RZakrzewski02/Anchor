@@ -7,6 +7,7 @@ import { createTask } from './task-actions'
 type Member = {
   user_id: string
   role: string
+  profiles?: any // Dodane, aby obsłużyć dane profilowe
 }
 
 export default function NewTaskButton({ 
@@ -56,7 +57,6 @@ export default function NewTaskButton({
 
             <form action={handleSubmit} className="p-6 flex flex-col gap-5">
               
-              {/* Tytuł */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nazwa zadania <span className="text-red-500">*</span></label>
                 <input 
@@ -67,7 +67,6 @@ export default function NewTaskButton({
                 />
               </div>
 
-              {/* Specjalizacja */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                   <Tag size={14}/> Specjalizacja
@@ -88,7 +87,6 @@ export default function NewTaskButton({
                 </div>
               </div>
 
-              {/* Opis */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Opis (opcjonalnie)</label>
                 <textarea 
@@ -101,23 +99,15 @@ export default function NewTaskButton({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Start</label>
-                  <input 
-                    type="date" 
-                    name="start_date" 
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" 
-                  />
+                  <input type="date" name="start_date" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Koniec</label>
-                  <input 
-                    type="date" 
-                    name="end_date" 
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" 
-                  />
+                  <input type="date" name="end_date" className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
               </div>
 
-              {/* Przypisanie */}
+              {/* POPRAWIONE PRZYPISANIE: Używamy profiles */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                   <User size={14}/> Przypisz do
@@ -128,13 +118,14 @@ export default function NewTaskButton({
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
                   >
                     <option value="unassigned">-- Nieprzypisane --</option>
-                    {members.map((member) => (
-                      <option key={member.user_id} value={member.user_id}>
-                        {member.user_id === currentUserId 
-                          ? 'Ty (Przypisz sobie)' 
-                          : `Członek zespołu (${member.role === 'manager' ? 'Kierownik' : 'Współpracownik'})`}
-                      </option>
-                    ))}
+                    {members.map((member) => {
+                      const p = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
+                      const name = member.user_id === currentUserId 
+                        ? 'Ty (Przypisz sobie)' 
+                        : (p?.full_name || `Członek zespołu`);
+                      
+                      return <option key={member.user_id} value={member.user_id}>{name}</option>
+                    })}
                   </select>
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
                     <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -143,18 +134,8 @@ export default function NewTaskButton({
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button 
-                  type="button" 
-                  onClick={() => setIsOpen(false)}
-                  className="flex-1 bg-white border border-slate-300 text-slate-700 font-bold py-2.5 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  Anuluj
-                </button>
-                <button 
-                  disabled={isLoading}
-                  type="submit" 
-                  className="flex-1 bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 shadow-md shadow-blue-100"
-                >
+                <button type="button" onClick={() => setIsOpen(false)} className="flex-1 bg-white border border-slate-300 text-slate-700 font-bold py-2.5 rounded-lg hover:bg-slate-50 transition-colors">Anuluj</button>
+                <button disabled={isLoading} type="submit" className="flex-1 bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 shadow-md shadow-blue-100">
                   {isLoading && <Loader2 size={18} className="animate-spin" />}
                   {isLoading ? 'Zapisywanie...' : 'Utwórz zadanie'}
                 </button>

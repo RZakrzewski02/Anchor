@@ -40,6 +40,28 @@ export default async function RegisterPage({
                 </div>
               )}
 
+              {/* Pole Imie */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-800 uppercase">Imię</label>
+                <input 
+                  name="firstName" 
+                  required 
+                  placeholder="Jan"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 outline-none focus:ring-2 focus:ring-blue-500" 
+                />
+              </div>
+
+              {/* Pole Nazwisko */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-800 uppercase">Nazwisko</label>
+                <input 
+                  name="lastName" 
+                  required 
+                  placeholder="Kowalski"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-900 outline-none focus:ring-2 focus:ring-blue-500" 
+                />
+              </div>
+
               {/* Pole Email */}
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-slate-800 tracking-tight">Email</label>

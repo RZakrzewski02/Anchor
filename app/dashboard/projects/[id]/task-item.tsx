@@ -2,17 +2,7 @@
 
 import { useState } from 'react'
 import { 
-  User, 
-  Edit2, 
-  Trash2, 
-  Calendar, 
-  X, 
-  Loader2, 
-  AlignLeft, 
-  UserCheck, 
-  Tag,
-  ArrowUpCircle,
-  ArrowDownCircle
+  User, Edit2, Trash2, Calendar, X, Loader2, AlignLeft, UserCheck, Tag, ArrowUpCircle, ArrowDownCircle
 } from 'lucide-react'
 import { updateTask, deleteTask, toggleTaskSprint } from './task-actions'
 
@@ -22,6 +12,8 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
   const [isMoving, setIsMoving] = useState(false)
 
   const assignee = members.find((m: any) => m.user_id === task.assignee_id)
+  // Wyciągamy dane profilowe dla wykonawcy
+  const assigneeProfile = Array.isArray(assignee?.profiles) ? assignee.profiles[0] : assignee?.profiles;
 
   const handleDelete = async () => {
     if (!confirm('Czy na pewno chcesz usunąć to zadanie?')) return
@@ -35,8 +27,6 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
 
   const handleSprintToggle = async () => {
     setIsMoving(true)
-    // Jeśli zadanie jest w sprincie -> przenieś do null (backlog)
-    // Jeśli nie jest -> przenieś do activeSprintId
     const newSprintId = task.sprint_id ? null : activeSprintId
     const result = await toggleTaskSprint(projectId, task.id, newSprintId)
     if (result?.error) alert(result.error)
@@ -70,17 +60,19 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
             </div>
           )}
 
+          {/* POPRAWIONE WYŚWIETLANIE: Używamy imienia/nazwiska */}
           <div className="flex items-center gap-1.5 text-xs font-medium">
             <UserCheck size={12} className={assignee ? "text-green-600" : "text-slate-300"} />
             <span className="text-slate-700">
-              {assignee ? (assignee.user_id === currentUserId ? "Ty" : "Przypisane") : "Nieprzypisane"}
+              {assignee 
+                ? (assignee.user_id === currentUserId ? "Ty" : (assigneeProfile?.full_name || "Przypisane")) 
+                : "Nieprzypisane"}
             </span>
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-1">
-        {/* Przycisk Przenoszenia (Strzałka) */}
         {(activeSprintId || task.sprint_id) && (
           <button 
             onClick={handleSprintToggle}
@@ -103,7 +95,6 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
         </button>
       </div>
 
-      {/* MODAL EDYCJI */}
       {isEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200 text-slate-900">
@@ -127,9 +118,17 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
                   <option value="mobile developer">Mobile</option>
                   <option value="game developer">Game Dev</option>
                 </select>
+                
+                {/* POPRAWIONE WYBIERANIE: Używamy profiles */}
                 <select name="assignee_id" defaultValue={task.assignee_id || 'unassigned'} className="w-full px-3 py-2 border rounded-lg text-slate-900">
                   <option value="unassigned">-- Brak --</option>
-                  {members.map((m: any) => <option key={m.user_id} value={m.user_id}>{m.user_id === currentUserId ? 'Ty' : 'Członek'}</option>)}
+                  {members.map((m: any) => {
+                    const p = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+                    const name = m.user_id === currentUserId 
+                      ? "Ty" 
+                      : (p?.full_name || "Członek zespołu");
+                    return <option key={m.user_id} value={m.user_id}>{name}</option>
+                  })}
                 </select>
               </div>
               <textarea name="description" defaultValue={task.description} className="w-full px-3 py-2 border rounded-lg text-slate-900 h-24 resize-none" placeholder="Opis..." />

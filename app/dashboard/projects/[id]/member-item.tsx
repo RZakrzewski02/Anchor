@@ -4,63 +4,79 @@ import { useState } from 'react'
 import { User, Trash2, Loader2 } from 'lucide-react'
 import { removeMember } from './member-actions'
 
-type MemberItemProps = {
-  projectId: string
-  userId: string
-  role: string
-  isCurrentUser: boolean
-  viewerIsManager: boolean
+interface MemberItemProps {
+  userId: string;
+  role: string;
+  isCurrentUser: boolean;
+  profiles: {
+    first_name: string | null;
+    last_name: string | null;
+    full_name: string | null;
+  } | null;
+  viewerIsManager: boolean;
+  projectId: string;
 }
 
-export default function MemberItem({ projectId, userId, role, isCurrentUser, viewerIsManager }: MemberItemProps) {
-  const [isDeleting, setIsDeleting] = useState(false)
+export default function MemberItem({ 
+  userId, 
+  role, 
+  isCurrentUser, 
+  profiles, 
+  viewerIsManager,
+  projectId
+}: MemberItemProps) {
+  const [isRemoving, setIsRemoving] = useState(false)
+  
+  const profileData = Array.isArray(profiles) ? profiles[0] : profiles;
 
-  const handleRemove = async () => {
-    if (!confirm('Czy na pewno chcesz usunąć tę osobę z projektu?')) return
+  const displayName = isCurrentUser 
+    ? "Ty" 
+    : (profileData?.full_name || 
+       (profileData?.first_name ? `${profileData.first_name} ${profileData.last_name || ''}`.trim() : null) || 
+       "Użytkownik");
 
-    setIsDeleting(true)
+  // FUNKCJA USUWANIA
+  const handleDelete = async () => {
+    if (!confirm(`Czy na pewno chcesz usunąć użytkownika ${displayName} z projektu?`)) return
+    
+    setIsRemoving(true)
     const result = await removeMember(projectId, userId)
     
-    if (result.error) {
-      alert(result.error)
-      setIsDeleting(false)
+    if (result?.error) {
+      alert("Błąd podczas usuwania: " + result.error)
+      setIsRemoving(false)
     }
-    // Jeśli sukces, revalidatePath w akcji odświeży listę, a komponent zniknie
   }
 
-  // Logika wyświetlania przycisku usuwania:
-  // 1. Oglądający musi być Managerem.
-  // 2. Nie można usunąć samego siebie (isCurrentUser).
-  const showDeleteButton = viewerIsManager && !isCurrentUser
-
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100 group">
+    <div className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100">
       <div className="flex items-center gap-3">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
-          role === 'manager' 
-            ? 'bg-blue-100 text-blue-600' 
-            : 'bg-slate-100 text-slate-500'
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-sm ${
+          isCurrentUser 
+            ? 'bg-blue-50 border-blue-200 text-blue-600' 
+            : 'bg-slate-50 border-slate-100 text-slate-400'
         }`}>
-          <User size={14} />
+          <User size={18} />
         </div>
         <div>
-          <p className="text-sm font-bold text-slate-800">
-            {isCurrentUser ? 'Ty' : 'Użytkownik'}
+          <p className="text-sm font-bold text-slate-900 leading-tight">
+            {displayName}
           </p>
-          <p className="text-xs text-slate-500 capitalize">
+          <p className="text-[11px] text-slate-500 font-medium">
             {role === 'manager' ? 'Kierownik' : 'Współpracownik'}
           </p>
         </div>
       </div>
 
-      {showDeleteButton && (
+      {/* PRZYCISK USUWANIA - TERAZ Z FUNKCJĄ ONCLICK */}
+      {viewerIsManager && !isCurrentUser && (
         <button 
-          onClick={handleRemove}
-          disabled={isDeleting}
-          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
+          onClick={handleDelete}
+          disabled={isRemoving}
+          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg md:opacity-0 group-hover:opacity-100 transition-all cursor-pointer disabled:opacity-50"
           title="Usuń z projektu"
         >
-          {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+          {isRemoving ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
         </button>
       )}
     </div>
