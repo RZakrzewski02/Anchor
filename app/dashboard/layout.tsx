@@ -11,9 +11,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-white">
-      <aside className="w-64 bg-slate-900 flex flex-col">
-        <Sidebar userEmail={user?.email} />
-      </aside>
+      <Sidebar userEmail={user?.email} />
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>
