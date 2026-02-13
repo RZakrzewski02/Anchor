@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { User, Trash2, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { User, Trash2, Loader2, ChevronRight } from 'lucide-react'
 import { removeMember } from './member-actions'
+import Link from 'next/link'
 
 interface MemberItemProps {
   userId: string;
@@ -28,22 +29,14 @@ export default function MemberItem({
 }: MemberItemProps) {
   const [isRemoving, setIsRemoving] = useState(false)
   
-  // page.tsx przekazuje teraz obiekt, nie tablicę
-  const profileData = profiles;
-
   const displayName = isCurrentUser 
     ? "Ty" 
-    : (profileData?.full_name || 
-       (profileData?.first_name ? `${profileData.first_name} ${profileData.last_name || ''}`.trim() : null) || 
+    : (profiles?.full_name || 
+       (profiles?.first_name ? `${profiles.first_name} ${profiles.last_name || ''}`.trim() : null) || 
        "Użytkownik");
 
-  // Dodajemy znacznik czasu do URL, aby wymusić odświeżenie po zmianie zdjęcia
-  const avatarUrlWithCache = useMemo(() => {
-    if (!profileData?.avatar_url) return null;
-    return `${profileData.avatar_url}?t=${new Date().getTime()}`;
-  }, [profileData?.avatar_url]);
-
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Blokujemy przejście do profilu przy kliknięciu w usuń
     if (!confirm(`Czy na pewno chcesz usunąć użytkownika ${displayName} z projektu?`)) return
     setIsRemoving(true)
     const result = await removeMember(projectId, userId)
@@ -54,43 +47,48 @@ export default function MemberItem({
   }
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100">
+    <Link 
+      href={isCurrentUser ? "/dashboard/settings/profile" : `/dashboard/users/${userId}`}
+      className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100"
+    >
       <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-sm overflow-hidden ${
-          isCurrentUser 
-            ? 'bg-blue-50 border-blue-200 text-blue-600' 
-            : 'bg-slate-50 border-slate-100 text-slate-400'
+        {/* AVATAR */}
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-sm overflow-hidden shrink-0 ${
+          isCurrentUser ? 'border-blue-200' : 'border-slate-100'
         }`}>
-          {avatarUrlWithCache ? (
-            <img 
-              src={avatarUrlWithCache} 
-              alt={displayName} 
-              className="w-full h-full object-cover"
-            />
+          {profiles?.avatar_url ? (
+            <img src={profiles.avatar_url} className="w-full h-full object-cover" alt="" />
           ) : (
-            <User size={18} />
+            <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300">
+              <User size={18} />
+            </div>
           )}
         </div>
-        <div>
-          <p className="text-sm font-bold text-slate-900 leading-tight">
+
+        {/* INFO O CZŁONKU */}
+        <div className="truncate">
+          <p className="text-sm font-bold text-slate-900 truncate leading-tight">
             {displayName}
           </p>
-          <p className="text-[11px] text-slate-500 font-medium">
-            {role === 'manager' ? 'Kierownik' : 'Współpracownik'}
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            {role === 'manager' ? 'Kierownik' : 'Członek'}
           </p>
         </div>
       </div>
 
-      {viewerIsManager && !isCurrentUser && (
-        <button 
-          onClick={handleDelete}
-          disabled={isRemoving}
-          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg md:opacity-0 group-hover:opacity-100 transition-all cursor-pointer disabled:opacity-50"
-          title="Usuń z projektu"
-        >
-          {isRemoving ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-        </button>
-      )}
-    </div>
+      <div className="flex items-center gap-1">
+        {/* Przycisk usuwania */}
+        {viewerIsManager && !isCurrentUser && (
+          <button 
+            onClick={handleDelete}
+            disabled={isRemoving}
+            className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg md:opacity-0 group-hover:opacity-100 transition-all cursor-pointer disabled:opacity-50"
+          >
+            {isRemoving ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+          </button>
+        )}
+        <ChevronRight size={14} className="text-slate-200 group-hover:text-slate-400 transition-all" />
+      </div>
+    </Link>
   )
 }
