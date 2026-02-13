@@ -3,14 +3,24 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Anchor, LayoutDashboard, FolderKanban, Settings, LogOut, Menu, X } from 'lucide-react'
-import { signOut } from '@/app/dashboard/actions'
+import { Anchor, LayoutDashboard, FolderKanban, Settings, LogOut, Menu, X, User } from 'lucide-react'
+import { signOut } from './actions'
+
+// Definicja typu profilu zgodna z tym, co zwraca Supabase
+type UserProfile = {
+  first_name?: string | null
+  last_name?: string | null
+  full_name?: string | null
+  avatar_url?: string | null
+  email?: string | null
+} | null
 
 type SidebarProps = {
   userEmail: string | undefined
+  userProfile: UserProfile
 }
 
-export default function Sidebar({ userEmail }: SidebarProps) {
+export default function Sidebar({ userEmail, userProfile }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
 
@@ -22,9 +32,21 @@ export default function Sidebar({ userEmail }: SidebarProps) {
     { href: '/dashboard/settings', label: 'Ustawienia', icon: Settings },
   ]
 
+  // LOGIKA WYŚWIETLANIA NAZWY:
+  // 1. Spróbuj użyć pełnego imienia i nazwiska z profilu
+  // 2. Jeśli brak, spróbuj złożyć first_name + last_name
+  // 3. Jeśli brak, użyj części e-maila przed @
+  const displayName = userProfile?.full_name || 
+    (userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name || ''}`.trim() : null) || 
+    userEmail?.split('@')[0] || 'Użytkownik'
+
+  // LOGIKA AWATARA:
+  // Czy mamy URL avatara?
+  const avatarUrl = userProfile?.avatar_url
+
   return (
     <>
-      {/* 1. PRZYCISK HAMBURGERA (Widoczny tylko na mobile: md:hidden) */}
+      {/* MOBILE HEADER */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 z-40">
         <div className="flex items-center gap-2">
           <Anchor className="text-blue-600" size={24} />
@@ -35,7 +57,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         </button>
       </div>
 
-      {/* 2. TŁO PRZYCIEMNIAJĄCE (Overlay na mobile) */}
+      {/* OVERLAY */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
@@ -43,26 +65,26 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         />
       )}
 
-      {/* 3. SIDEBAR WŁAŚCIWY */}
+      {/* SIDEBAR */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white flex flex-col transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
-        md:translate-x-0 md:static md:h-screen
+        md:translate-x-0 md:static md:h-full md:flex-none
       `}>
-        {/* Nagłówek Sidebaru */}
-        <div className="p-6 flex items-center justify-between border-b border-slate-800 h-16 md:h-auto">
+        
+        {/* LOGO */}
+        <div className="p-6 flex items-center justify-between border-b border-slate-800 h-16 shrink-0">
           <div className="flex items-center gap-2">
             <Anchor className="text-blue-400" size={24} />
             <span className="text-xl font-bold tracking-tight text-white">Anchor</span>
           </div>
-          {/* Przycisk zamknięcia tylko na mobile */}
           <button onClick={() => setIsOpen(false)} className="md:hidden text-slate-400">
             <X size={24} />
           </button>
         </div>
 
-        {/* Nawigacja */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        {/* MENU */}
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => (
             <Link 
               key={item.href}
@@ -80,19 +102,41 @@ export default function Sidebar({ userEmail }: SidebarProps) {
           ))}
         </nav>
 
-        {/* Stopka użytkownika */}
-        <div className="p-4 border-t border-slate-800 space-y-4 bg-slate-900">
-          <div className="px-4 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white uppercase border border-slate-700">
-              {userEmail?.charAt(0) || 'U'}
+        {/* SEKCJA UŻYTKOWNIKA (PROFIL) */}
+        <div className="p-4 border-t border-slate-800 space-y-3 bg-slate-900 shrink-0">
+          
+          <Link 
+            href="/dashboard/settings/profile" 
+            className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800 transition-colors group cursor-pointer"
+            onClick={() => setIsOpen(false)}
+          >
+            {/* AVATAR */}
+            <div className="w-10 h-10 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center shrink-0 overflow-hidden group-hover:border-blue-500 transition-colors">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div className="font-bold text-slate-300 text-sm flex items-center justify-center w-full h-full">
+                  {/* Jeśli nie ma zdjęcia, pokazujemy pierwszą literę imienia lub maila */}
+                  {(userProfile?.first_name?.[0] || userEmail?.charAt(0) || 'U').toUpperCase()}
+                </div>
+              )}
             </div>
+
+            {/* DANE TEKSTOWE */}
             <div className="flex flex-col min-w-0">
-              <span className="text-xs font-bold text-white truncate">{userEmail}</span>
+              <span className="text-sm font-bold text-white truncate group-hover:text-blue-400 transition-colors">
+                {displayName}
+              </span>
+              <span className="text-xs text-slate-400 truncate" title={userEmail}>
+                {userEmail}
+              </span>
             </div>
-          </div>
+          </Link>
+
+          {/* WYLOGUJ */}
           <form action={signOut}>
-            <button className="w-full flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer font-bold text-sm">
-              <LogOut size={18} /> Wyloguj się
+            <button className="w-full flex items-center gap-3 px-2 py-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer text-xs font-bold uppercase tracking-wider">
+              <LogOut size={14} /> Wyloguj
             </button>
           </form>
         </div>
