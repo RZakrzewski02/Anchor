@@ -40,11 +40,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     .select('user_id, role')
     .eq('project_id', id)
 
-  // 2. POBIERAMY PROFILE (dla wszystkich znalezionych user_id)
+  // 2. POBIERAMY PROFILE (Dodano avatar_url do zapytania)
   const userIds = membersRaw?.map(m => m.user_id) || []
   const { data: profilesRaw } = await supabase
     .from('profiles')
-    .select('id, first_name, last_name, full_name')
+    .select('id, first_name, last_name, full_name, avatar_url') // TUTAJ dodaliśmy avatar_url
     .in('id', userIds)
 
   // 3. ŁĄCZYMY DANE RĘCZNIE

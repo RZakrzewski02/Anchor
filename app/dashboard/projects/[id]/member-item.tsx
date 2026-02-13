@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { User, Trash2, Loader2 } from 'lucide-react'
 import { removeMember } from './member-actions'
 
@@ -12,6 +12,7 @@ interface MemberItemProps {
     first_name: string | null;
     last_name: string | null;
     full_name: string | null;
+    avatar_url: string | null;
   } | null;
   viewerIsManager: boolean;
   projectId: string;
@@ -27,7 +28,8 @@ export default function MemberItem({
 }: MemberItemProps) {
   const [isRemoving, setIsRemoving] = useState(false)
   
-  const profileData = Array.isArray(profiles) ? profiles[0] : profiles;
+  // page.tsx przekazuje teraz obiekt, nie tablicę
+  const profileData = profiles;
 
   const displayName = isCurrentUser 
     ? "Ty" 
@@ -35,13 +37,16 @@ export default function MemberItem({
        (profileData?.first_name ? `${profileData.first_name} ${profileData.last_name || ''}`.trim() : null) || 
        "Użytkownik");
 
-  // FUNKCJA USUWANIA
+  // Dodajemy znacznik czasu do URL, aby wymusić odświeżenie po zmianie zdjęcia
+  const avatarUrlWithCache = useMemo(() => {
+    if (!profileData?.avatar_url) return null;
+    return `${profileData.avatar_url}?t=${new Date().getTime()}`;
+  }, [profileData?.avatar_url]);
+
   const handleDelete = async () => {
     if (!confirm(`Czy na pewno chcesz usunąć użytkownika ${displayName} z projektu?`)) return
-    
     setIsRemoving(true)
     const result = await removeMember(projectId, userId)
-    
     if (result?.error) {
       alert("Błąd podczas usuwania: " + result.error)
       setIsRemoving(false)
@@ -51,12 +56,20 @@ export default function MemberItem({
   return (
     <div className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100">
       <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-sm ${
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-sm overflow-hidden ${
           isCurrentUser 
             ? 'bg-blue-50 border-blue-200 text-blue-600' 
             : 'bg-slate-50 border-slate-100 text-slate-400'
         }`}>
-          <User size={18} />
+          {avatarUrlWithCache ? (
+            <img 
+              src={avatarUrlWithCache} 
+              alt={displayName} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <User size={18} />
+          )}
         </div>
         <div>
           <p className="text-sm font-bold text-slate-900 leading-tight">
@@ -68,7 +81,6 @@ export default function MemberItem({
         </div>
       </div>
 
-      {/* PRZYCISK USUWANIA - TERAZ Z FUNKCJĄ ONCLICK */}
       {viewerIsManager && !isCurrentUser && (
         <button 
           onClick={handleDelete}

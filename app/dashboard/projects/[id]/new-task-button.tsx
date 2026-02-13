@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { Plus, X, Loader2, User, Tag } from 'lucide-react'
 import { createTask } from './task-actions'
+import AssigneeSelect from './assignee-select'
 
 type Member = {
   user_id: string
   role: string
-  profiles?: any // Dodane, aby obsłużyć dane profilowe
+  profiles?: any 
 }
 
 export default function NewTaskButton({ 
@@ -20,6 +21,7 @@ export default function NewTaskButton({
   currentUserId: string 
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [selectedAssignee, setSelectedAssignee] = useState('unassigned')
   const [isLoading, setIsLoading] = useState(false)
 
   async function handleSubmit(formData: FormData) {
@@ -31,6 +33,7 @@ export default function NewTaskButton({
       alert(result.error)
     } else {
       setIsOpen(false)
+      setSelectedAssignee('unassigned')
     }
   }
 
@@ -46,7 +49,8 @@ export default function NewTaskButton({
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200">
+          {/* USUNIĘTO overflow-hidden, DODANO relative */}
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg border border-slate-200 relative">
             
             <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
               <h3 className="font-bold text-slate-800 text-lg">Nowe zadanie</h3>
@@ -56,44 +60,24 @@ export default function NewTaskButton({
             </div>
 
             <form action={handleSubmit} className="p-6 flex flex-col gap-5">
-              
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Nazwa zadania <span className="text-red-500">*</span></label>
-                <input 
-                  name="title" 
-                  required 
-                  placeholder="Co trzeba zrobić?" 
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                />
+                <input name="title" required placeholder="Co trzeba zrobić?" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                  <Tag size={14}/> Specjalizacja
-                </label>
-                <div className="relative">
-                  <select 
-                    name="specialization"
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
-                  >
-                    <option value="frontend">Frontend</option>
-                    <option value="backend">Backend</option>
-                    <option value="mobile developer">Mobile Developer</option>
-                    <option value="game developer">Game Developer</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </div>
-                </div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><Tag size={14}/> Specjalizacja</label>
+                <select name="specialization" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                  <option value="frontend">Frontend</option>
+                  <option value="backend">Backend</option>
+                  <option value="mobile developer">Mobile Developer</option>
+                  <option value="game developer">Game Developer</option>
+                </select>
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Opis (opcjonalnie)</label>
-                <textarea 
-                  name="description" 
-                  placeholder="Dodatkowe szczegóły..." 
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none transition-all"
-                />
+                <textarea name="description" placeholder="Dodatkowe szczegóły..." className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none transition-all" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -107,40 +91,24 @@ export default function NewTaskButton({
                 </div>
               </div>
 
-              {/* POPRAWIONE PRZYPISANIE: Używamy profiles */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                  <User size={14}/> Przypisz do
-                </label>
-                <div className="relative">
-                  <select 
-                    name="assignee_id"
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
-                  >
-                    <option value="unassigned">-- Nieprzypisane --</option>
-                    {members.map((member) => {
-                      const p = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
-                      const name = member.user_id === currentUserId 
-                        ? 'Ty (Przypisz sobie)' 
-                        : (p?.full_name || `Członek zespołu`);
-                      
-                      return <option key={member.user_id} value={member.user_id}>{name}</option>
-                    })}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </div>
-                </div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><User size={14}/> Przypisz do</label>
+                <AssigneeSelect 
+                  name="assignee_id"
+                  members={members}
+                  selectedId={selectedAssignee}
+                  onSelect={setSelectedAssignee}
+                  currentUserId={currentUserId}
+                />
               </div>
 
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setIsOpen(false)} className="flex-1 bg-white border border-slate-300 text-slate-700 font-bold py-2.5 rounded-lg hover:bg-slate-50 transition-colors">Anuluj</button>
-                <button disabled={isLoading} type="submit" className="flex-1 bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 shadow-md shadow-blue-100">
+                <button disabled={isLoading} type="submit" className="flex-1 bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 shadow-md">
                   {isLoading && <Loader2 size={18} className="animate-spin" />}
                   {isLoading ? 'Zapisywanie...' : 'Utwórz zadanie'}
                 </button>
               </div>
-
             </form>
           </div>
         </div>
