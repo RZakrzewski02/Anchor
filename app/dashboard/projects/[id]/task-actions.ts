@@ -2,6 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+// 1. NOWY IMPORT
+import { createNotification } from '@/app/dashboard/notification-actions'
 
 export async function createTask(projectId: string, formData: FormData) {
   const supabase = await createClient()
@@ -13,7 +15,8 @@ export async function createTask(projectId: string, formData: FormData) {
   const startDate = formData.get('start_date') as string
   const endDate = formData.get('end_date') as string
 
-  const { error } = await supabase.from('tasks').insert({
+  // 2. ZMIANA W CREATE: Dodajemy .select().single(), aby otrzymać dane nowo utworzonego zadania
+  const { data: newTask, error } = await supabase.from('tasks').insert({
     project_id: projectId,
     title,
     description,
@@ -23,8 +26,25 @@ export async function createTask(projectId: string, formData: FormData) {
     end_date: endDate || null,
     status: 'todo'
   })
+  .select() // Ważne: prosimy bazę o zwrot danych
+  .single() // Oczekujemy jednego rekordu
 
   if (error) return { error: error.message }
+
+  // 3. WYSYŁANIE POWIADOMIENIA (jeśli przypisano kogoś przy tworzeniu)
+  if (newTask.assignee_id) {
+    await createNotification(
+      newTask.assignee_id, // ID osoby przypisanej
+      'assignment',        // Typ powiadomienia
+      newTask.id,          // ID Zadania
+      'task',              // Typ zasobu
+      { 
+        task_title: title,
+        project_id: projectId 
+      }
+    )
+  }
+
   revalidatePath(`/dashboard/projects/${projectId}`)
   return { success: true }
 }
@@ -39,16 +59,35 @@ export async function updateTask(projectId: string, taskId: string, formData: Fo
   const startDate = formData.get('start_date') as string
   const endDate = formData.get('end_date') as string
 
+  // Ustalamy finalne ID (null lub UUID)
+  const finalAssigneeId = assigneeId === 'unassigned' ? null : assigneeId
+
   const { error } = await supabase.from('tasks').update({
     title,
     description,
-    assignee_id: assigneeId === 'unassigned' ? null : assigneeId,
+    assignee_id: finalAssigneeId,
     specialization,
     start_date: startDate || null,
     end_date: endDate || null
   }).eq('id', taskId)
 
   if (error) return { error: error.message }
+
+  // 4. WYSYŁANIE POWIADOMIENIA PRZY EDYCJI
+  // Jeśli w formularzu wybrano pracownika (nie jest null), wysyłamy powiadomienie
+  if (finalAssigneeId) {
+    await createNotification(
+      finalAssigneeId,
+      'assignment',
+      taskId,
+      'task',
+      { 
+        task_title: title,
+        project_id: projectId 
+      }
+    )
+  }
+
   revalidatePath(`/dashboard/projects/${projectId}`)
   return { success: true }
 }

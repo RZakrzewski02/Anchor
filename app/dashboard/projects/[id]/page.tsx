@@ -8,7 +8,7 @@ import MemberItem from './member-item'
 import TaskItem from './task-item'
 import CreateSprintButton from './create-sprint-button'
 import CompleteSprintButton from './sprint/[sprintId]/complete-button'
-import CompleteProjectButton from './complete-project-button' // Import przycisku
+import CompleteProjectButton from './complete-project-button'
 
 import { 
   Layers, 
@@ -18,7 +18,8 @@ import {
   ArrowRight, 
   LayoutDashboard, 
   History,
-  FolderKanban // Ikona do nagłówka
+  FolderKanban,
+  CheckCircle2,
 } from 'lucide-react'
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -39,9 +40,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   // 1. POBIERAMY CZŁONKÓW
   const { data: membersRaw } = await supabase
-    .from('project_members')
-    .select('user_id, role')
-    .eq('project_id', id)
+  .from('project_members')
+  .select('user_id, role, status') // Dodajemy status
+  .eq('project_id', id)
+  .eq('status', 'active') // KLUCZ: Pokazuj tylko aktywnych członków
 
   // 2. POBIERAMY PROFILE (Z avatar_url)
   const userIds = membersRaw?.map(m => m.user_id) || []
@@ -63,18 +65,19 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   const sprintTasks = tasks?.filter(t => t.sprint_id === activeSprint?.id && t.sprint_id !== null) || []
   const backlogTasks = tasks?.filter(t => !t.sprint_id) || []
+  const completedTasks = tasks?.filter(t => t.status === 'done') || []
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-64px)] font-sans bg-white text-slate-900">
       
       {/* --- NOWY NAGŁÓWEK PROJEKTU --- */}
-      <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-white sticky top-0 z-40 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
+      <div className="p-4 md:p-6 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center bg-white relative lg:sticky lg:top-0 lg:z-40 shadow-sm gap-4">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl shrink-0">
             <FolderKanban size={28} />
           </div>
-          <div>
-            <h1 className="text-2xl font-black tracking-tight leading-none text-slate-900">{project.name}</h1>
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-black tracking-tight leading-none text-slate-900 truncate">{project.name}</h1>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
               {project.status === 'completed' ? 'Projekt Zakończony' : 'Projekt Aktywny'}
             </p>
@@ -83,7 +86,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         
         {/* Przycisk zakończenia widoczny tylko dla Managera i tylko gdy projekt jest aktywny */}
         {isManager && project.status !== 'completed' && (
-          <CompleteProjectButton projectId={id} />
+          <div className="w-full md:w-auto">
+             <CompleteProjectButton projectId={id} />
+          </div>
         )}
       </div>
 
@@ -133,19 +138,71 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* --- Historia --- */}
-          <div className="p-8 border-t border-slate-200 bg-white">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 mb-6"><History className="text-slate-400" size={20} /> Historia Sprintów</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {completedSprints?.map(s => (
-                <Link key={s.id} href={`/dashboard/projects/${id}/sprint/${s.id}`} className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-all group overflow-hidden">
-                  <div className="truncate">
-                    <h3 className="font-bold text-slate-800 group-hover:text-blue-600 truncate">{s.name}</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Zakończono: {new Date(s.created_at).toLocaleDateString('pl-PL')}</p>
-                  </div>
-                  <ArrowRight size={16} className="text-slate-300 group-hover:text-blue-500 shrink-0" />
-                </Link>
-              ))}
+          <div className="p-4 md:p-8 border-t border-slate-200 bg-white">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                <CheckCircle2 size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Zakończone Zadania</h2>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">Lista zadań zakończonych w tym projekcie.</p>
+              </div>
             </div>
+
+            {completedTasks && completedTasks.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {completedTasks.map((task) => {
+                  const assignee = allMembers.find(m => m.user_id === task.assignee_id)?.profiles
+
+                  return (
+                    <div 
+                      key={task.id} 
+                      className="group relative flex flex-col justify-between p-5 bg-white border border-slate-200 rounded-2xl hover:border-emerald-300 hover:shadow-md transition-all duration-200 min-h-30"
+                    >
+                      <div>
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-100 px-2 py-0.5 rounded-full bg-slate-50">
+                            {task.specialization || 'General'}
+                          </span>
+                          {/* Ikona sukcesu */}
+                          <div className="text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <CheckCircle2 size={16} />
+                          </div>
+                        </div>
+                        
+                        <h3 className="font-bold text-slate-700 text-sm leading-snug mb-4 line-clamp-2 group-hover:text-slate-900">
+                          {task.title}
+                        </h3>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-50 mt-auto">
+                        <div className="flex items-center gap-2">
+                          {assignee ? (
+                            <>
+                              <img 
+                                src={assignee.avatar_url || `https://ui-avatars.com/api/?name=${assignee.full_name}&background=random`} 
+                                alt="Avatar" 
+                                className="w-6 h-6 rounded-full object-cover border border-white shadow-sm"
+                              />
+                              <span className="text-xs text-slate-500 font-medium truncate max-w-25">
+                                {assignee.full_name}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">Nieprzypisane</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12 border-2 border-dashed border-emerald-100/50 rounded-2xl bg-emerald-50/10">
+                <CheckCircle2 className="mx-auto text-emerald-200 mb-3" size={32} />
+                <p className="text-slate-400 font-medium text-sm">Jeszcze żadne zadanie nie zostało zakończone.</p>
+              </div>
+            )}
           </div>
         </main>
 

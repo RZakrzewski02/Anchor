@@ -70,7 +70,7 @@ export default function PasswordForm() {
 
       <button 
         disabled={loading}
-        className="bg-blue-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors text-sm shadow-sm cursor-pointer"
       >
         {loading && <Loader2 size={16} className="animate-spin" />}
         <Lock size={16} />

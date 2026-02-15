@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Anchor, LayoutDashboard, FolderKanban, Settings, LogOut, Menu, X, User } from 'lucide-react'
+import { Anchor, LayoutDashboard, FolderKanban, Settings, LogOut, Menu, X, User, Bell } from 'lucide-react'
 import { signOut } from './actions'
 
 // Definicja typu profilu zgodna z tym, co zwraca Supabase
@@ -18,9 +18,10 @@ type UserProfile = {
 type SidebarProps = {
   userEmail: string | undefined
   userProfile: UserProfile
+  unreadCount: number // NOWE: Liczba nieprzeczytanych powiadomień
 }
 
-export default function Sidebar({ userEmail, userProfile }: SidebarProps) {
+export default function Sidebar({ userEmail, userProfile, unreadCount }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
 
@@ -29,19 +30,17 @@ export default function Sidebar({ userEmail, userProfile }: SidebarProps) {
   const menuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/projects', label: 'Projekty', icon: FolderKanban },
+    // NOWE: Powiadomienia z przekazanym licznikiem (badge)
+    { href: '/dashboard/notifications', label: 'Powiadomienia', icon: Bell, badge: unreadCount },
     { href: '/dashboard/settings', label: 'Ustawienia', icon: Settings },
   ]
 
   // LOGIKA WYŚWIETLANIA NAZWY:
-  // 1. Spróbuj użyć pełnego imienia i nazwiska z profilu
-  // 2. Jeśli brak, spróbuj złożyć first_name + last_name
-  // 3. Jeśli brak, użyj części e-maila przed @
   const displayName = userProfile?.full_name || 
     (userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name || ''}`.trim() : null) || 
     userEmail?.split('@')[0] || 'Użytkownik'
 
   // LOGIKA AWATARA:
-  // Czy mamy URL avatara?
   const avatarUrl = userProfile?.avatar_url
 
   return (
@@ -96,7 +95,17 @@ export default function Sidebar({ userEmail, userProfile }: SidebarProps) {
                   : 'hover:bg-slate-800 text-slate-300 hover:text-white'
               }`}
             >
-              <item.icon size={18} className={isActive(item.href) ? 'text-white' : 'group-hover:text-blue-400'} /> 
+              <div className="relative">
+                <item.icon size={18} className={isActive(item.href) ? 'text-white' : 'group-hover:text-blue-400'} /> 
+                
+                {/* NOWE: Wyświetlanie badge'a z liczbą powiadomień */}
+                {item.badge ? (
+                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold w-3.5 h-3.5 flex items-center justify-center rounded-full border border-slate-900">
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                ) : null}
+              </div>
+              
               <span className="font-medium">{item.label}</span>
             </Link>
           ))}
@@ -116,7 +125,6 @@ export default function Sidebar({ userEmail, userProfile }: SidebarProps) {
                 <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
                 <div className="font-bold text-slate-300 text-sm flex items-center justify-center w-full h-full">
-                  {/* Jeśli nie ma zdjęcia, pokazujemy pierwszą literę imienia lub maila */}
                   {(userProfile?.first_name?.[0] || userEmail?.charAt(0) || 'U').toUpperCase()}
                 </div>
               )}

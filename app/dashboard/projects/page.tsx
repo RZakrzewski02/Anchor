@@ -12,6 +12,7 @@ export default async function ProjectsPage() {
     .from('project_members')
     .select(`project_id, projects (*)`)
     .eq('user_id', user?.id)
+    .eq('status', 'active')
 
   // Mapowanie i rozpakowanie danych z joinów (naprawa błędów any[])
   const projectList = userProjects?.map(p => {

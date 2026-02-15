@@ -1,82 +1,123 @@
 'use client'
 
-import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Camera, Loader2, User } from 'lucide-react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { Upload, Loader2, User } from 'lucide-react'
 
-export default function AvatarUpload({ userId, avatarUrl }: { userId: string, avatarUrl?: string }) {
-  const [uploading, setUploading] = useState(false)
+interface AvatarUploadProps {
+  userId: string
+  avatarUrl: string | null | undefined
+}
+
+export default function AvatarUpload({ userId, avatarUrl }: AvatarUploadProps) {
   const supabase = createClient()
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploading, setIsUploading] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(avatarUrl || null)
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 1. Podgląd lokalny (natychmiastowy)
+    const objectUrl = URL.createObjectURL(file)
+    setPreviewUrl(objectUrl)
+
     try {
-      setUploading(true)
-      if (!event.target.files || event.target.files.length === 0) return
-
-      const file = event.target.files[0]
+      setIsUploading(true)
+      
       const fileExt = file.name.split('.').pop()
-      const filePath = `${userId}/avatar.${fileExt}`
+      // KLUCZOWA ZMIANA: Unikalna nazwa pliku za każdym razem (np. avatar-17078234234.png)
+      // Dzięki temu URL się zmienia i cache przeglądarki jest pomijany.
+      const fileName = `avatar-${Date.now()}.${fileExt}`
+      const filePath = `${userId}/${fileName}`
 
-      // 1. Wgrywamy plik do Storage (nadpisujemy jeśli istnieje)
+      // 2. Upload nowego pliku
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true })
+        .upload(filePath, file)
 
       if (uploadError) throw uploadError
 
-      // 2. Pobieramy publiczny URL
+      // 3. Pobranie nowego publicznego URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath)
 
-      // 3. Aktualizujemy tabelę profiles o nowy URL
+      // 4. Aktualizacja profilu w bazie nowym linkiem
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
         .eq('id', userId)
 
       if (updateError) throw updateError
-      
+
+      // 5. Odświeżenie aplikacji (Sidebar pobierze nowy URL z bazy)
       router.refresh()
-    } catch (error: any) {
-      alert('Błąd wgrywania: ' + error.message)
+
+    } catch (error) {
+      console.error('Błąd uploadu:', error)
+      alert('Nie udało się zmienić zdjęcia.')
+      setPreviewUrl(avatarUrl || null) // Cofnij zmiany w razie błędu
     } finally {
-      setUploading(false)
+      setIsUploading(false)
+    }
+  }
+
+  const handleDivClick = () => {
+    if (!isUploading) {
+      fileInputRef.current?.click()
     }
   }
 
   return (
-    <div className="relative group">
-      <div className="w-32 h-32 rounded-full border-4 border-slate-100 overflow-hidden bg-slate-50 flex items-center justify-center relative">
-        {avatarUrl ? (
+    <div className="flex flex-col items-center gap-4">
+      <div 
+        onClick={handleDivClick}
+        className={`relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-slate-100 group transition-all ${isUploading ? 'opacity-50 cursor-wait' : 'cursor-pointer hover:border-blue-100'}`}
+      >
+        {previewUrl ? (
           <img 
-            src={`${avatarUrl}?t=${new Date().getTime()}`} 
+            key={previewUrl} 
+            src={previewUrl} 
             alt="Avatar" 
-            className="w-full h-full object-cover" 
-            />
+            className="w-full h-full object-cover"
+          />
         ) : (
-          <User size={48} className="text-slate-300" />
-        )}
-        
-        {uploading && (
-          <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center">
-            <Loader2 className="text-white animate-spin" />
+          <div className="w-full h-full flex items-center justify-center text-slate-300">
+            <User size={48} />
           </div>
         )}
+        
+        {!isUploading && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Upload className="text-white" size={24} />
+          </div>
+        )}
+
+        {isUploading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+            <Loader2 className="animate-spin text-blue-600" size={32} />
+          </div>
+        )}
+        
+        <input 
+          ref={fileInputRef}
+          type="file" 
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden" 
+        />
       </div>
 
-      <label className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-700 transition-transform hover:scale-110">
-        <Camera size={18} />
-        <input 
-          type="file" 
-          className="hidden" 
-          accept="image/*" 
-          onChange={uploadAvatar} 
-          disabled={uploading} 
-        />
-      </label>
+      {isUploading && (
+        <span className="text-xs font-bold text-blue-600 animate-pulse">
+          Zapisywanie w chmurze...
+        </span>
+      )}
     </div>
   )
 }

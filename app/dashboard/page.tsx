@@ -3,84 +3,122 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { 
   CheckCircle2, 
-  Clock, 
   ChevronRight, 
+  ChevronLeft, // Dodano import strzałki w lewo
   Briefcase,
   ListTodo,
-  FolderKanban
+  FolderKanban,
+  Calendar as CalendarIcon,
+  AlertCircle
 } from 'lucide-react'
 
-export default async function DashboardPage() {
+// Definicja propsów dla Server Component (Next.js 15 traktuje searchParams jako Promise)
+export default async function DashboardPage(props: {
+  searchParams: Promise<{ month?: string; year?: string }>
+}) {
+  const searchParams = await props.searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // 1. Pobieramy projekty z ich statusem
+  // --- 1. LOGIKA DATY (KALENDARZ) ---
+  const now = new Date()
+  
+  // Pobieramy rok i miesiąc z URL, a jak nie ma, to bierzemy aktualne
+  // Uwaga: w URL month=0 to Styczeń, month=11 to Grudzień (standard JS)
+  const viewYear = searchParams.year ? parseInt(searchParams.year) : now.getFullYear()
+  const viewMonth = searchParams.month ? parseInt(searchParams.month) : now.getMonth()
+
+  // Tworzymy obiekt daty dla widoku (pierwszy dzień wyświetlanego miesiąca)
+  const currentViewDate = new Date(viewYear, viewMonth, 1)
+  
+  // Obliczamy daty dla przycisków "Poprzedni" i "Następny"
+  const prevDate = new Date(viewYear, viewMonth - 1, 1)
+  const nextDate = new Date(viewYear, viewMonth + 1, 1)
+  
+  // Parametry do linków
+  const prevLink = `/dashboard?month=${prevDate.getMonth()}&year=${prevDate.getFullYear()}`
+  const nextLink = `/dashboard?month=${nextDate.getMonth()}&year=${nextDate.getFullYear()}`
+  const resetLink = `/dashboard` // Powrót do "dzisiaj"
+
+  // Zmienne pomocnicze do generowania siatki
+  const currentYear = currentViewDate.getFullYear()
+  const currentMonth = currentViewDate.getMonth()
+  
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
+  // 0=Poniedziałek, 6=Niedziela (poprawka przesunięcia)
+  const firstDayIndex = (new Date(currentYear, currentMonth, 1).getDay() || 7) - 1 
+
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+  const emptySlots = Array.from({ length: firstDayIndex }, (_, i) => i)
+
+  const monthName = currentViewDate.toLocaleString('pl-PL', { month: 'long', year: 'numeric' })
+  const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1)
+
+  // --- 2. POBIERANIE DANYCH ---
+  
+  // Pobieramy projekty
   const { data: userProjects } = await supabase
     .from('project_members')
     .select(`
       project_id,
+      status,
       projects (id, name, status)
     `)
     .eq('user_id', user.id)
+    .eq('status', 'active')
 
-  // Filtrujemy, aby zostawić tylko AKTYWNE projekty
-  const projects = userProjects?.map(p => {
-    // Zabezpieczenie na wypadek gdyby Supabase zwrócił tablicę
+  const projects = userProjects?.map((p: any) => {
     const proj = Array.isArray(p.projects) ? p.projects[0] : p.projects;
     return proj;
   }).filter((p: any) => p && p.status !== 'completed') || []
 
   const projectIds = projects.map((p: any) => p.id)
 
-  // 2. Pobieramy członków tylko dla aktywnych projektów
   const { data: allProjectMembers } = await supabase
     .from('project_members')
-    .select(`
-      project_id,
-      profiles (avatar_url, full_name)
-    `)
+    .select(`project_id, profiles (avatar_url, full_name, first_name)`)
     .in('project_id', projectIds)
 
-  // 3. Pobieramy zadania i filtrujemy te z zakończonych projektów
+  // Pobieramy zadania (wszystkie aktywne, filtrowanie po dacie zrobimy w JS)
   const { data: myTasksRaw } = await supabase
     .from('tasks')
-    .select(`
-      *,
-      projects (name, status)
-    `)
+    .select(`*, projects (name, status)`)
     .eq('assignee_id', user.id)
     .neq('status', 'done')
-    .order('created_at', { ascending: false })
+    .order('end_date', { ascending: true })
 
   const myTasks = myTasksRaw?.filter((t: any) => {
     const p = Array.isArray(t.projects) ? t.projects[0] : t.projects;
-    // Pokazuj zadanie tylko jeśli projekt jest aktywny
     return p && p.status !== 'completed';
   }) || []
 
+  // Statystyki ogólne (niezależne od wybranego miesiąca)
   const activeTasksCount = myTasks.length
+  
+  // Zadania bez daty
+  const tasksNoDate = myTasks.filter((t: any) => !t.end_date)
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 font-sans text-slate-900 min-h-screen">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 font-sans text-slate-900 min-h-screen">
       
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">Witaj ponownie!</h1>
-        <p className="text-slate-500 font-medium">Oto przegląd Twojej pracy w aktywnych projektach.</p>
+        <p className="text-slate-500 font-medium">Twój harmonogram pracy.</p>
       </header>
 
-      {/* STATYSTYKI */}
+      {/* STATYSTYKI GÓRNE */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-5 transition-all hover:shadow-md">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-5">
           <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
             <ListTodo size={28} />
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Twoje Zadania</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Wszystkie Zadania</p>
             <p className="text-3xl font-black text-slate-900">{activeTasksCount}</p>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-5 transition-all hover:shadow-md">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-5">
           <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
             <Briefcase size={28} />
           </div>
@@ -91,48 +129,142 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         
-        {/* TWOJE ZADANIA (Lewa kolumna) */}
-        <div className="md:col-span-2 space-y-5">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
-              <Clock size={22} className="text-blue-600" /> Moje priorytety
-            </h2>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-            {myTasks && myTasks.length > 0 ? (
-              myTasks.map((task: any) => (
-                <div key={task.id} className="p-5 border-b border-slate-50 last:border-0 hover:bg-slate-50/80 transition-all flex justify-between items-center group">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[10px] font-bold text-blue-500 uppercase tracking-tight">{(task.projects as any)?.name}</span>
-                    <span className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{task.title}</span>
-                    {task.end_date && (
-                      <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                        <CheckCircle2 size={12} className="text-slate-300" />
-                        Termin: {task.end_date}
-                      </div>
-                    )}
-                  </div>
-                  <Link href={`/dashboard/projects/${task.project_id}`} className="w-10 h-10 rounded-full flex items-center justify-center text-slate-200 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all">
-                    <ChevronRight size={24} />
-                  </Link>
-                </div>
-              ))
-            ) : (
-              <div className="p-16 text-center">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 size={32} className="text-slate-200" />
-                </div>
-                <p className="text-slate-400 italic text-sm font-medium">Brak pilnych zadań w aktywnych projektach!</p>
-              </div>
+        {/* LEWA KOLUMNA: KALENDARZ */}
+        <div className="xl:col-span-2 space-y-5">
+          
+          {/* NAGŁÓWEK KALENDARZA Z NAWIGACJĄ */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 px-1">
+            
+            <div className="flex items-center gap-4 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
+              <Link 
+                href={prevLink} 
+                className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-blue-600 transition-colors"
+                title="Poprzedni miesiąc"
+              >
+                <ChevronLeft size={20} />
+              </Link>
+              
+              <h2 className="text-lg font-bold flex items-center gap-2 text-slate-800 min-w-35 justify-center">
+                <CalendarIcon size={18} className="text-blue-600" /> 
+                <span className="capitalize">{monthName}</span>
+              </h2>
+
+              <Link 
+                href={nextLink}
+                className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-blue-600 transition-colors"
+                title="Następny miesiąc"
+              >
+                <ChevronRight size={20} />
+              </Link>
+            </div>
+
+            {/* Przycisk powrotu do "dzisiaj", jeśli nie oglądamy aktualnego miesiąca */}
+            {(viewMonth !== now.getMonth() || viewYear !== now.getFullYear()) && (
+               <Link href={resetLink} className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
+                 Wróć do dzisiaj
+               </Link>
+            )}
+            
+            {/* Wyświetlanie aktualnej daty jako info */}
+            {viewMonth === now.getMonth() && viewYear === now.getFullYear() && (
+               <div className="text-xs font-bold text-slate-400 uppercase tracking-wide bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">
+                 Dzisiaj: {now.toLocaleDateString('pl-PL')}
+               </div>
             )}
           </div>
+          
+          <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm p-4 md:p-6">
+            {/* Nagłówki dni tygodnia */}
+            <div className="grid grid-cols-7 mb-4 text-center">
+              {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map(day => (
+                <div key={day} className="text-xs font-bold text-slate-400 uppercase tracking-widest py-2">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Siatka kalendarza */}
+            <div className="grid grid-cols-7 gap-2">
+              {/* Puste sloty */}
+              {emptySlots.map(slot => <div key={`empty-${slot}`} className="min-h-25 bg-slate-50/20 rounded-xl" />)}
+
+              {/* Dni miesiąca */}
+              {daysArray.map(day => {
+                // Filtrujemy zadania dla konkretnego dnia w WYŚWIETLANYM miesiącu
+                const dayTasks = myTasks.filter((t: any) => {
+                  if (!t.end_date) return false
+                  const d = new Date(t.end_date)
+                  return d.getDate() === day && d.getMonth() === currentMonth && d.getFullYear() === currentYear
+                })
+
+                // Sprawdzamy czy to "dzisiaj" (tylko jeśli wyświetlany miesiąc to aktualny miesiąc)
+                const isToday = day === now.getDate() && currentMonth === now.getMonth() && currentYear === now.getFullYear()
+
+                return (
+                  <div 
+                    key={day} 
+                    className={`min-h-25 border rounded-xl p-2 flex flex-col gap-1 transition-all ${
+                      isToday ? 'border-blue-500 bg-blue-50/30 ring-1 ring-blue-500 ring-offset-2' : 'border-slate-100 bg-slate-50/30 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className={`text-xs font-bold mb-1 ml-1 ${isToday ? 'text-blue-600' : 'text-slate-400'}`}>
+                      {day}
+                    </span>
+                    
+                    <div className="flex flex-col gap-1.5 overflow-y-auto max-h-35 custom-scrollbar">
+                      {dayTasks.map((t: any) => (
+                        <Link 
+                          key={t.id} 
+                          href={`/dashboard/projects/${t.project_id}`}
+                          className="block bg-white border border-slate-200 p-2 rounded-lg shadow-sm hover:border-blue-400 hover:shadow-md transition-all group"
+                          title={`${t.title}`}
+                        >
+                          <div className="text-[8px] font-bold text-slate-400 uppercase tracking-wider truncate mb-0.5">
+                            {(t.projects as any)?.name}
+                          </div>
+                          <div className="text-[10px] font-bold text-slate-700 group-hover:text-blue-600 truncate leading-tight">
+                            {t.title}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Sekcja zadań bez terminu */}
+          {tasksNoDate.length > 0 && (
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+              <h3 className="text-sm font-bold text-slate-500 mb-3 flex items-center gap-2">
+                <AlertCircle size={16} /> Zadania bez terminu ({tasksNoDate.length})
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {tasksNoDate.map((t: any) => (
+                  <Link 
+                    key={t.id} 
+                    href={`/dashboard/projects/${t.project_id}`}
+                    className="group flex flex-col bg-white border border-slate-200 px-3 py-1.5 rounded-lg hover:border-blue-400 hover:shadow-sm transition-all"
+                  >
+                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                      {(t.projects as any)?.name}
+                    </span>
+                    <span className="text-xs font-bold text-slate-600 group-hover:text-blue-600">
+                      {t.title}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* LISTA PROJEKTÓW (Prawa kolumna) */}
+        {/* PRAWA KOLUMNA: PROJEKTY */}
         <div className="space-y-5">
-          <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
+          <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800 px-1">
             <FolderKanban size={22} className="text-indigo-600" /> Projekty
           </h2>
           <div className="space-y-4">
@@ -154,7 +286,6 @@ export default async function DashboardPage() {
                         <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-600 transition-all translate-x-0 group-hover:translate-x-1" />
                       </div>
                       
-                      {/* Avatary Zespołu */}
                       <div className="flex items-center -space-x-2.5">
                         {projectMembers.map((m: any, idx) => {
                           const p = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;

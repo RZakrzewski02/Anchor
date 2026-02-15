@@ -27,7 +27,7 @@ export default function CreateSprintButton({ projectId }: { projectId: string })
     <button 
       onClick={handleCreate}
       disabled={isLoading}
-      className="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold hover:bg-slate-50 transition-colors text-sm shadow-sm cursor-pointer"
+      className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors text-sm shadow-sm cursor-pointer"
     >
       {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
       Stwórz sprint

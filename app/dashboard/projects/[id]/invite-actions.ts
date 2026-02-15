@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { createNotification } from '@/app/dashboard/notification-actions'
 
 export async function inviteMember(projectId: string, formData: FormData) {
   const supabase = await createClient()
@@ -9,17 +10,34 @@ export async function inviteMember(projectId: string, formData: FormData) {
 
   if (!email) return { error: 'Podaj adres email' }
 
-  // Wywołanie bezpiecznej funkcji bazy danych
-  const { error } = await supabase.rpc('add_member_by_email', {
-    project_id: projectId,
-    email: email
+  // 1. Wywołujemy nową funkcję RPC, która zwraca nam UUID zapraszanego usera
+  const { data: invitedUserId, error: rpcError } = await supabase.rpc('invite_member_by_email', {
+    p_project_id: projectId,
+    p_email: email
   })
 
-  if (error) {
-    // Np. "Nie znaleziono użytkownika" lub "Użytkownik już jest w projekcie"
-    return { error: error.message }
+  if (rpcError) {
+    return { error: rpcError.message }
+  }
+
+  // 2. Pobieramy nazwę projektu do treści powiadomienia
+  const { data: project } = await supabase
+    .from('projects')
+    .select('name')
+    .eq('id', projectId)
+    .single()
+
+  // 3. Wysyłamy powiadomienie (invitedUserId to UUID zwrócone z RPC)
+  if (invitedUserId) {
+    await createNotification(
+      invitedUserId,
+      'invitation',
+      projectId,
+      'project',
+      { project_name: project?.name || 'Nowy projekt' }
+    )
   }
 
   revalidatePath(`/dashboard/projects/${projectId}`)
-  return { success: 'Użytkownik został dodany!' }
+  return { success: 'Zaproszenie zostało wysłane do powiadomień użytkownika!' }
 }
