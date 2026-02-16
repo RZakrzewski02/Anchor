@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { format, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, startOfDay } from 'date-fns'
-import { pl } from 'date-fns/locale'
+import { pl } from 'date-fns/locale/pl'
 
 export default function Roadmap({ tasks }: { tasks: any[] }) {
   // 1. Filtrujemy zadania z datami
