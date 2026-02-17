@@ -4,22 +4,74 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, User, ChevronLeft } from 'lucide-react'
 import { sendMessage } from './friends-actions'
 import { usePresence } from './presence-provider'
+import { createClient } from '@/lib/supabase/client' // Używamy klienta przeglądarkowego
 import Link from 'next/link'
 
 export default function ChatWindow({ 
-  messages, 
+  messages: initialMessages, // Rename dla czytelności
   currentUserId, 
   friendId, 
   friendName,
   friendAvatar
 }: any) {
+  // 1. Zarządzanie stanem wiadomości lokalnie dla natychmiastowych aktualizacji
+  const [chatMessages, setChatMessages] = useState(initialMessages)
   const [inputValue, setInputValue] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+  const supabase = createClient()
   
   const { isUserOnline } = usePresence()
   const isOnline = isUserOnline(friendId)
 
-  // Funkcja pomocnicza do formatowania daty i godziny
+  // Synchronizacja stanu, gdy zmienia się rozmówca lub przychodzą nowe dane z serwera
+  useEffect(() => {
+    setChatMessages(initialMessages)
+  }, [initialMessages, friendId])
+
+  // 2. SUBSKRYPCJA REALTIME
+  useEffect(() => {
+    console.log("Inicjalizacja subskrypcji dla:", friendId); // DEBUG
+
+    const channel = supabase
+      .channel(`chat_${friendId}`)
+      .on(
+        'postgres_changes' as any,
+        {
+          event: 'INSERT',
+          table: 'direct_messages',
+          // USUNIĘTO FILTR STĄD - filtrujemy niżej w kodzie
+        },
+        (payload: any) => {
+          const newMsg = payload.new;
+          console.log("Otrzymano nową wiadomość przez Realtime:", newMsg); // DEBUG
+
+          // Filtrowanie ręczne - sprawdzamy czy wiadomość dotyczy tej rozmowy
+          const isFromThisChat = 
+            (newMsg.sender_id === friendId && newMsg.receiver_id === currentUserId) ||
+            (newMsg.sender_id === currentUserId && newMsg.receiver_id === friendId);
+
+          if (isFromThisChat) {
+            setChatMessages((prev: any) => {
+              if (prev.find((m: any) => m.id === newMsg.id)) return prev;
+              return [...prev, newMsg];
+            });
+
+            // Automatyczne oznaczanie jako przeczytane
+            if (newMsg.receiver_id === currentUserId) {
+              supabase.from('direct_messages').update({ is_read: true }).eq('id', newMsg.id).then();
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log("Status subskrypcji:", status); // DEBUG: Powinno być 'SUBSCRIBED'
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [friendId, currentUserId, supabase]);
+
   const formatMessageDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('pl-PL', {
@@ -32,7 +84,7 @@ export default function ChatWindow({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [chatMessages])
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,6 +93,8 @@ export default function ChatWindow({
     const content = inputValue
     setInputValue('')
     
+    // Optymistycznie nie dodajemy tutaj wiadomości do stanu, 
+    // bo Realtime ją "złapie" i wyświetli automatycznie po zapisie w DB.
     await sendMessage(friendId, content)
   }
 
@@ -76,23 +130,21 @@ export default function ChatWindow({
 
       {/* Lista wiadomości */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar bg-white/50">
-        {messages.length === 0 && (
+        {chatMessages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs italic">
             <p>To początek waszej rozmowy.</p>
           </div>
         )}
-        {messages.map((msg: any) => {
+        {chatMessages.map((msg: any) => {
           const isMe = msg.sender_id === currentUserId
           return (
             <div key={msg.id} className="flex flex-col space-y-1">
-              {/* DATA I GODZINA NAD WIADOMOŚCIĄ */}
               <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                 <span className="text-[10px] font-bold text-slate-400 px-1 uppercase tracking-tighter">
                   {formatMessageDate(msg.created_at)}
                 </span>
               </div>
 
-              {/* DYMEK WIADOMOŚCI */}
               <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] md:max-w-[75%] px-4 py-2 rounded-2xl text-sm shadow-sm ${
                   isMe 
@@ -127,7 +179,7 @@ export default function ChatWindow({
           <button 
             type="submit"
             disabled={!inputValue.trim()}
-            className="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm shrink-0"
+            className="bg-blue-600 text-white p-2.5 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm shrink-0 cursor-pointer"
           >
             <Send size={18} />
           </button>

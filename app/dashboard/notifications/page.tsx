@@ -125,7 +125,7 @@ function NotificationItem({ notification }: { notification: any }) {
                     await acceptFriendRequestFromNotification(notification.resource_id, notification.id) 
                 }
             }}>
-              <button className="w-full md:w-auto flex items-center justify-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200">
+              <button className="w-full md:w-auto flex items-center justify-center gap-1.5 bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200 cursor-pointer">
                 <Check size={14} /> Akceptuj
               </button>
             </form>
@@ -141,14 +141,14 @@ function NotificationItem({ notification }: { notification: any }) {
                     await declineFriendRequestFromNotification(notification.resource_id, notification.id)
                 }
             }}>
-              <button className="w-full md:w-auto flex items-center justify-center gap-1.5 bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 hover:text-red-600 hover:border-red-100 transition-colors">
+              <button className="w-full md:w-auto flex items-center justify-center gap-1.5 bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 hover:text-red-600 hover:border-red-100 transition-colors cursor-pointer">
                 <X size={14} /> Odrzuć
               </button>
             </form>
           </div>
         ) : (
           // DLA POZOSTAŁYCH TYPÓW LUB PRZECZYTANYCH - LINK
-          <Link href={linkHref} className="whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+          <Link href={linkHref} className="whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors ">
              Zobacz szczegóły
           </Link>
         )}
@@ -157,7 +157,7 @@ function NotificationItem({ notification }: { notification: any }) {
           {/* Przycisk oznaczania jako przeczytane (dla innych typów niż zaproszenia) */}
           {!isRead && !isInvitation && (
             <form action={async () => { 'use server'; await markAsRead(notification.id) }}>
-              <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Oznacz jako przeczytane">
+              <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" title="Oznacz jako przeczytane">
                 <Check size={18} />
               </button>
             </form>
@@ -165,7 +165,7 @@ function NotificationItem({ notification }: { notification: any }) {
 
           {/* Usuwanie */}
           <form action={async () => { 'use server'; await deleteNotification(notification.id) }}>
-            <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Usuń powiadomienie">
+            <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Usuń powiadomienie">
               <Trash2 size={18} />
             </button>
           </form>

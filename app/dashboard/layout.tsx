@@ -1,7 +1,12 @@
+// app/dashboard/layout.tsx
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/app/dashboard/sidebar'
 import { redirect } from 'next/navigation'
 import PresenceProvider from './friends/presence-provider'
+import RealtimeNotificationsListener from './notifications-listener'
+
+// DODAJ TĘ LINIĘ NA GÓRZE PLIKU:
+export const dynamic = 'force-dynamic' 
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -10,7 +15,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
 
-  // NOWE: Pobieramy liczbę nieprzeczytanych powiadomień
+  // Pobieramy liczbę nieprzeczytanych powiadomień
   const { count } = await supabase
     .from('notifications')
     .select('*', { count: 'exact', head: true })
@@ -19,11 +24,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex h-screen bg-white overflow-hidden">
+      {user && <RealtimeNotificationsListener userId={user.id} />}
       <PresenceProvider user={user}>
         <Sidebar 
           userEmail={user.email} 
           userProfile={profile} 
-          unreadCount={count || 0} // <--- Przekazujemy tutaj
+          unreadCount={count || 0} 
         />
         <main className="flex-1 overflow-y-auto h-full bg-slate-50">
           {children}

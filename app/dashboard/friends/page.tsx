@@ -5,6 +5,10 @@ import FriendsList from './friends-list'
 import ChatWindow from './chat-window'
 import { acceptFriendRequest } from './friends-actions'
 import AvatarWithStatus from './avatar-with-status'
+import RealtimeFriendsListener from './realtime-listener' // ZAIMPORTUJ TO
+
+// 1. WYMUSZAMY BRAK CACHE - Liczniki będą zawsze świeże przy odświeżeniu
+export const dynamic = 'force-dynamic'
 
 export default async function FriendsPage(props: { searchParams: Promise<{ chatWith?: string }> }) {
   const searchParams = await props.searchParams
@@ -29,21 +33,18 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
   }
 
   // 3. POBIERAMY INFORMACJE O WIADOMOŚCIACH (ostatnia wiadomość i nieprzeczytane)
-  // Pobieramy ostatnie wiadomości dla wszystkich konwersacji użytkownika
   const { data: lastMessages } = await supabase
     .from('direct_messages')
     .select('sender_id, receiver_id, created_at, content')
     .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
     .order('created_at', { ascending: false })
 
-  // Pobieramy liczbę nieprzeczytanych wiadomości dla użytkownika
   const { data: unreadCountsRaw } = await supabase
     .from('direct_messages')
     .select('sender_id')
     .eq('receiver_id', user.id)
     .eq('is_read', false)
 
-  // Grupowanie nieprzeczytanych wiadomości po nadawcy
   const unreadMap: Record<string, number> = {}
   unreadCountsRaw?.forEach(msg => {
     unreadMap[msg.sender_id] = (unreadMap[msg.sender_id] || 0) + 1
@@ -51,27 +52,26 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
 
   // 4. ŁĄCZYMY DANE I SORTUJEMY
   const friends = friendships.map(f => {
-  const friendId = f.requester_id === user.id ? f.addressee_id : f.requester_id
-  const profile = profilesMap[friendId]
-  
-  const lastMsg = lastMessages?.find(m => 
-    (m.sender_id === user.id && m.receiver_id === friendId) || 
-    (m.sender_id === friendId && m.receiver_id === user.id)
-  )
+    const friendId = f.requester_id === user.id ? f.addressee_id : f.requester_id
+    const profile = profilesMap[friendId]
+    
+    const lastMsg = lastMessages?.find(m => 
+      (m.sender_id === user.id && m.receiver_id === friendId) || 
+      (m.sender_id === friendId && m.receiver_id === user.id)
+    )
 
-  return {
-    friendshipId: f.id,
-    status: f.status,
-    id: friendId,
-    full_name: profile?.full_name || 'Nieznany Użytkownik',
-    avatar_url: profile?.avatar_url,
-    isMyRequest: f.requester_id === user.id,
-    lastMessageAt: lastMsg ? new Date(lastMsg.created_at).getTime() : 0,
-    unreadCount: (searchParams.chatWith === friendId) ? 0 : (unreadMap[friendId] || 0)
-  }
-})
+    return {
+      friendshipId: f.id,
+      status: f.status,
+      id: friendId,
+      full_name: profile?.full_name || 'Nieznany Użytkownik',
+      avatar_url: profile?.avatar_url,
+      isMyRequest: f.requester_id === user.id,
+      lastMessageAt: lastMsg ? new Date(lastMsg.created_at).getTime() : 0,
+      unreadCount: (searchParams.chatWith === friendId) ? 0 : (unreadMap[friendId] || 0)
+    }
+  })
 
-  // Sortowanie: osoby z najnowszą wiadomością na górze
   const acceptedFriends = friends
     .filter(f => f.status === 'accepted')
     .sort((a, b) => b.lastMessageAt - a.lastMessageAt)
@@ -91,7 +91,7 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
         .order('created_at', { ascending: true })
       messages = msgs || []
 
-      // OPCJONALNIE: Oznaczanie jako przeczytane po otwarciu czatu
+      // Oznaczanie jako przeczytane przy otwarciu (serwerowo)
       await supabase
         .from('direct_messages')
         .update({ is_read: true })
@@ -105,6 +105,9 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
 
   return (
     <div className="flex h-full bg-white overflow-hidden shadow-sm relative">
+      {/* 2. DODAJEMY SŁUCHACZA REALTIME DLA LISTY ZNAJOMYCH */}
+      <RealtimeFriendsListener userId={user.id} />
+
       <div className={`${isChatOpen ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-slate-200 flex-col bg-slate-50 shrink-0 h-full pt-16 md:pt-0`}>
         <div className="p-4 border-b border-slate-200 bg-white">
           <h1 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">

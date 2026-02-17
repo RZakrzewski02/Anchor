@@ -18,21 +18,21 @@ export async function createNotification(
   // Sprawdzamy, kto wysyła
   const { data: { user: actor } } = await supabase.auth.getUser()
   if (!actor) {
-    console.error("❌ BŁĄD POWIADOMIENIA: Brak zalogowanego użytkownika (aktora)")
+    console.error("BŁĄD POWIADOMIENIA: Brak zalogowanego użytkownika (aktora)")
     return
   }
 
   // Logika: nie wysyłaj do samego siebie
   if (userId === actor.id) {
-    console.log("ℹ️ Pominięto powiadomienie do samego siebie")
+    console.log("Pominięto powiadomienie do samego siebie")
     return
   }
 
-  console.log(`🚀 Próba wysłania powiadomienia od ${actor.email} do ${userId} (typ: ${type})...`)
+  console.log(`Próba wysłania powiadomienia od ${actor.email} do ${userId} (typ: ${type})...`)
 
   const { error } = await supabase.from('notifications').insert({
-    user_id: userId, // ID odbiorcy
-    actor_id: actor.id, // ID nadawcy
+    user_id: userId,
+    actor_id: actor.id,
     type,
     resource_id: resourceId,
     resource_type: resourceType,

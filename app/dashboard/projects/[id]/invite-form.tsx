@@ -52,7 +52,7 @@ export default function InviteForm({ projectId }: { projectId: string }) {
         <button 
           disabled={isLoading}
           type="submit" 
-          className="bg-blue-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 transition-all flex justify-center items-center gap-2 mt-2"
+          className="bg-blue-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 transition-all flex justify-center items-center gap-2 mt-2 cursor-pointer"
         >
           {isLoading && <Loader2 size={16} className="animate-spin" />}
           {isLoading ? 'Dodawanie...' : 'Wyślij zaproszenie'}
