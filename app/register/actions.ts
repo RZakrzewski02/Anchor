@@ -12,22 +12,18 @@ export async function signup(formData: FormData) {
   const firstName = formData.get('firstName') as string
   const lastName = formData.get('lastName') as string
 
-  // 1. Walidacja obecności imienia i nazwiska
   if (!firstName || !lastName) {
     return redirect('/register?error=Imię i nazwisko są wymagane')
   }
 
-  // 2. Walidacja zgodności haseł
   if (password !== confirmPassword) {
     return redirect('/register?error=Hasła nie są identyczne')
   }
 
-  // 3. Rejestracja w Supabase z metadanymi
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      // DANE METADATA - to tutaj ląduje imię i nazwisko
       data: {
         first_name: firstName,
         last_name: lastName,
@@ -39,6 +35,10 @@ export async function signup(formData: FormData) {
 
   if (error) {
     return redirect(`/register?error=${encodeURIComponent(error.message)}`)
+  }
+
+  if (data.session) {
+    return redirect('/dashboard')
   }
 
   return redirect('/register?success=true')

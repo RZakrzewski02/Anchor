@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/app/dashboard/sidebar'
 import { redirect } from 'next/navigation'
+import PresenceProvider from './friends/presence-provider'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -18,14 +19,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex h-screen bg-white overflow-hidden">
-      <Sidebar 
-        userEmail={user.email} 
-        userProfile={profile} 
-        unreadCount={count || 0} // <--- Przekazujemy tutaj
-      />
-      <main className="flex-1 overflow-y-auto h-full bg-slate-50">
-        {children}
-      </main>
+      <PresenceProvider user={user}>
+        <Sidebar 
+          userEmail={user.email} 
+          userProfile={profile} 
+          unreadCount={count || 0} // <--- Przekazujemy tutaj
+        />
+        <main className="flex-1 overflow-y-auto h-full bg-slate-50">
+          {children}
+        </main>
+      </PresenceProvider>
     </div>
   )
 }

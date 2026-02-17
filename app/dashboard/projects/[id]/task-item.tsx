@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { 
   User, Edit2, Trash2, Calendar, X, Loader2, UserCheck, Tag, ArrowUpCircle, ArrowDownCircle,
-  MessageSquare // Dodałem ikonę
+  MessageSquare
 } from 'lucide-react'
 import { updateTask, deleteTask, toggleTaskSprint } from './task-actions'
 import AssigneeSelect from './assignee-select'
@@ -13,7 +13,7 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isMoving, setIsMoving] = useState(false)
-  const [showComments, setShowComments] = useState(false) // Nowy stan dla komentarzy
+  const [showComments, setShowComments] = useState(false)
   const [selectedAssignee, setSelectedAssignee] = useState(task.assignee_id || 'unassigned')
 
   const assignee = members.find((m: any) => m.user_id === task.assignee_id)
@@ -71,7 +71,25 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
         </div>
 
         <div className="flex items-center gap-1">
-          {/* NOWY PRZYCISK DO KOMENTARZY */}
+          {/* PRZYCISK PRZENOSZENIA - Teraz pierwszy od lewej i większy (size 22) */}
+          {(activeSprintId || task.sprint_id) && (
+            <button 
+              onClick={handleSprintToggle} 
+              disabled={isMoving} 
+              className={`p-2 rounded-lg transition-all md:opacity-0 group-hover:opacity-100 cursor-pointer ${task.sprint_id ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+              title={task.sprint_id ? "Przenieś do backlogu" : "Przenieś do sprintu"}
+            >
+              {isMoving ? (
+                <Loader2 size={22} className="animate-spin" />
+              ) : task.sprint_id ? (
+                <ArrowDownCircle size={22} />
+              ) : (
+                <ArrowUpCircle size={22} />
+              )}
+            </button>
+          )}
+
+          {/* PRZYCISK DO KOMENTARZY */}
           <button 
             onClick={() => setShowComments(true)}
             className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all md:opacity-0 group-hover:opacity-100 cursor-pointer"
@@ -80,13 +98,24 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
             <MessageSquare size={16} />
           </button>
 
-          {(activeSprintId || task.sprint_id) && (
-            <button onClick={handleSprintToggle} disabled={isMoving} className={`p-2 rounded-lg transition-all md:opacity-0 group-hover:opacity-100 cursor-pointer ${task.sprint_id ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`}>
-              {isMoving ? <Loader2 size={16} className="animate-spin" /> : task.sprint_id ? <ArrowDownCircle size={18} /> : <ArrowUpCircle size={18} />}
-            </button>
-          )}
-          <button onClick={() => { setIsEditing(true); setSelectedAssignee(task.assignee_id || 'unassigned'); }} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all md:opacity-0 group-hover:opacity-100 cursor-pointer"><Edit2 size={16} /></button>
-          <button onClick={handleDelete} disabled={isDeleting} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all md:opacity-0 group-hover:opacity-100 cursor-pointer">{isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}</button>
+          {/* EDYCJA */}
+          <button 
+            onClick={() => { setIsEditing(true); setSelectedAssignee(task.assignee_id || 'unassigned'); }} 
+            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all md:opacity-0 group-hover:opacity-100 cursor-pointer"
+            title="Edytuj"
+          >
+            <Edit2 size={16} />
+          </button>
+
+          {/* USUWANIE */}
+          <button 
+            onClick={handleDelete} 
+            disabled={isDeleting} 
+            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all md:opacity-0 group-hover:opacity-100 cursor-pointer"
+            title="Usuń"
+          >
+            {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+          </button>
         </div>
       </div>
 
@@ -110,7 +139,6 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
               </button>
             </div>
             <div className="p-0 overflow-hidden flex-1 flex flex-col">
-               {/* Kontener dla komponentu komentarzy z przewijaniem wewnątrz */}
                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
                   <TaskComments taskId={task.id} currentUserId={currentUserId} />
                </div>
@@ -122,7 +150,6 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
       {/* MODAL EDYCJI */}
       {isEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-          {/* USUNIĘTO overflow-hidden */}
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg border border-slate-200 text-slate-900 relative">
             <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
               <h3 className="font-bold text-slate-800">Edytuj zadanie</h3>
@@ -141,8 +168,8 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
                 <select name="specialization" defaultValue={task.specialization} className="w-full px-3 py-2 border rounded-lg bg-white">
                   <option value="frontend">Frontend</option>
                   <option value="backend">Backend</option>
-                  <option value="mobile developer">Mobile</option>
-                  <option value="game developer">Game Dev</option>
+                  <option value="mobile developer">Mobile Developer</option>
+                  <option value="game developer">Game Developer</option>
                 </select>
                 <AssigneeSelect 
                   name="assignee_id"

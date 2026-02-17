@@ -102,23 +102,7 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
                 </div>
               )
             })}
-
-            {/* POPRAWIONA LINIA "DZIŚ" */}
-            {today >= minDate && today <= maxDate && (
-              <div 
-                className="absolute top-0 bottom-0 w-px bg-red-500 z-30 pointer-events-none"
-                style={{ 
-                  // 12rem to szerokość w-48. differenceInDays wylicza precyzyjne przesunięcie.
-                  left: `calc(12rem + ${(differenceInDays(today, minDate) / totalDays) * 100}%)`
-                }}
-              >
-                <div className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-b-sm absolute top-0 transform -translate-x-1/2 shadow-sm">
-                  Dziś
-                </div>
-              </div>
-            )}
           </div>
-
         </div>
       </div>
     </div>

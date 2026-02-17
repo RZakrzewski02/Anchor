@@ -68,7 +68,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const completedTasks = tasks?.filter(t => t.status === 'done') || []
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-64px)] font-sans bg-white text-slate-900">
+    <div className="flex flex-col h-full font-sans bg-white text-slate-900">
       
       {/* --- NOWY NAGŁÓWEK PROJEKTU --- */}
       <div className="p-4 md:p-6 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center bg-white relative lg:sticky lg:top-0 lg:z-40 shadow-sm gap-4">

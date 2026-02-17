@@ -4,12 +4,15 @@ import { useState } from 'react'
 import { User, Trash2, Loader2, ChevronRight } from 'lucide-react'
 import { removeMember } from './member-actions'
 import Link from 'next/link'
+// 1. Importujemy hook od obecności
+import { usePresence } from '../../friends/presence-provider'
 
 interface MemberItemProps {
   userId: string;
   role: string;
   isCurrentUser: boolean;
   profiles: {
+    id?: string; // Dodane, by mieć pewność co do ID do sprawdzenia obecności
     first_name: string | null;
     last_name: string | null;
     full_name: string | null;
@@ -29,6 +32,10 @@ export default function MemberItem({
 }: MemberItemProps) {
   const [isRemoving, setIsRemoving] = useState(false)
   
+  // 2. Pobieramy status dostępności dla tego użytkownika
+  const { isUserOnline } = usePresence()
+  const isOnline = isUserOnline(userId)
+  
   const displayName = isCurrentUser 
     ? "Ty" 
     : (profiles?.full_name || 
@@ -36,7 +43,7 @@ export default function MemberItem({
        "Użytkownik");
 
   const handleDelete = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Blokujemy przejście do profilu przy kliknięciu w usuń
+    e.preventDefault(); 
     if (!confirm(`Czy na pewno chcesz usunąć użytkownika ${displayName} z projektu?`)) return
     setIsRemoving(true)
     const result = await removeMember(projectId, userId)
@@ -52,17 +59,25 @@ export default function MemberItem({
       className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100"
     >
       <div className="flex items-center gap-3">
-        {/* AVATAR */}
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-sm overflow-hidden shrink-0 ${
-          isCurrentUser ? 'border-blue-200' : 'border-slate-100'
-        }`}>
-          {profiles?.avatar_url ? (
-            <img src={profiles.avatar_url} className="w-full h-full object-cover" alt="" />
-          ) : (
-            <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300">
-              <User size={18} />
-            </div>
-          )}
+        {/* AVATAR ZE STATUSEM */}
+        <div className="relative shrink-0">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-sm overflow-hidden ${
+            isCurrentUser ? 'border-blue-200' : 'border-slate-100'
+          }`}>
+            {profiles?.avatar_url ? (
+              <img src={profiles.avatar_url} className="w-full h-full object-cover" alt="" />
+            ) : (
+              // ZMIANA: Zawsze ludek zamiast litery
+              <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-300">
+                <User size={18} />
+              </div>
+            )}
+          </div>
+          
+          {/* 3. KROPKA STATUSU (ONLINE/OFFLINE) */}
+          <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full transition-colors duration-300 ${
+            isOnline ? 'bg-green-500' : 'bg-slate-300'
+          }`} />
         </div>
 
         {/* INFO O CZŁONKU */}
@@ -70,14 +85,20 @@ export default function MemberItem({
           <p className="text-sm font-bold text-slate-900 truncate leading-tight">
             {displayName}
           </p>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            {role === 'manager' ? 'Kierownik' : 'Członek'}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              {role === 'manager' ? 'Kierownik' : 'Członek'}
+            </p>
+            {/* 4. INFORMACJA TEKSTOWA O STATUSIE */}
+            <span className="text-[8px] text-slate-300">•</span>
+            <p className={`text-[10px] font-bold uppercase tracking-widest ${isOnline ? 'text-green-500' : 'text-slate-400'}`}>
+              {isOnline ? 'Dostępny' : 'Niedostępny'}
+            </p>
+          </div>
         </div>
       </div>
 
       <div className="flex items-center gap-1">
-        {/* Przycisk usuwania */}
         {viewerIsManager && !isCurrentUser && (
           <button 
             onClick={handleDelete}

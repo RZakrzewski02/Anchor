@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Anchor, LayoutDashboard, FolderKanban, Settings, LogOut, Menu, X, User, Bell } from 'lucide-react'
+import { Anchor, LayoutDashboard, FolderKanban, Settings, LogOut, Menu, X, User, Bell, Users } from 'lucide-react'
 import { signOut } from './actions'
 
 // Definicja typu profilu zgodna z tym, co zwraca Supabase
@@ -30,7 +30,7 @@ export default function Sidebar({ userEmail, userProfile, unreadCount }: Sidebar
   const menuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/projects', label: 'Projekty', icon: FolderKanban },
-    // NOWE: Powiadomienia z przekazanym licznikiem (badge)
+    { href: '/dashboard/friends', label: 'Znajomi', icon: Users},
     { href: '/dashboard/notifications', label: 'Powiadomienia', icon: Bell, badge: unreadCount },
     { href: '/dashboard/settings', label: 'Ustawienia', icon: Settings },
   ]
@@ -119,14 +119,12 @@ export default function Sidebar({ userEmail, userProfile, unreadCount }: Sidebar
             className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800 transition-colors group cursor-pointer"
             onClick={() => setIsOpen(false)}
           >
-            {/* AVATAR */}
-            <div className="w-10 h-10 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center shrink-0 overflow-hidden group-hover:border-blue-500 transition-colors">
+            {/* AVATAR - POPRAWIONY NA IKONKĘ LUDKA */}
+            <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden group-hover:border-blue-500 transition-colors">
               {avatarUrl ? (
                 <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
-                <div className="font-bold text-slate-300 text-sm flex items-center justify-center w-full h-full">
-                  {(userProfile?.first_name?.[0] || userEmail?.charAt(0) || 'U').toUpperCase()}
-                </div>
+                <User size={20} className="text-slate-500 group-hover:text-blue-400 transition-colors" />
               )}
             </div>
 
