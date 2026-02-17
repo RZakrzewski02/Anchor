@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, User, ChevronLeft } from 'lucide-react' // Dodano ChevronLeft
+import { Send, User, ChevronLeft } from 'lucide-react'
 import { sendMessage } from './friends-actions'
 import { usePresence } from './presence-provider'
-import Link from 'next/link' // Dodano Link do nawigacji
+import Link from 'next/link'
 
 export default function ChatWindow({ 
   messages, 
@@ -18,6 +18,17 @@ export default function ChatWindow({
   
   const { isUserOnline } = usePresence()
   const isOnline = isUserOnline(friendId)
+
+  // Funkcja pomocnicza do formatowania daty i godziny
+  const formatMessageDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('pl-PL', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -37,11 +48,9 @@ export default function ChatWindow({
     <div className="flex flex-col h-full bg-slate-50">
       {/* Nagłówek czatu */}
       <div className="p-3 border-b border-slate-200 flex items-center gap-2 md:gap-3 bg-white shadow-sm z-10 shrink-0">
-        
-        {/* PRZYCISK WSTECZ: Widoczny tylko na małych ekranach (md:hidden) */}
         <Link 
           href="/dashboard/friends" 
-          className=" text-slate-500 hover:bg-slate-100 rounded-full transition-colors"
+          className="text-slate-500 hover:bg-slate-100 rounded-full transition-colors md:hidden"
         >
           <ChevronLeft size={24} />
         </Link>
@@ -66,7 +75,7 @@ export default function ChatWindow({
       </div>
 
       {/* Lista wiadomości */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar bg-white/50">
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs italic">
             <p>To początek waszej rozmowy.</p>
@@ -75,13 +84,23 @@ export default function ChatWindow({
         {messages.map((msg: any) => {
           const isMe = msg.sender_id === currentUserId
           return (
-            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] md:max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow-sm ${
-                isMe 
-                  ? 'bg-blue-600 text-white rounded-tr-sm' 
-                  : 'bg-white border border-slate-200 text-slate-800 rounded-tl-sm'
-              }`}>
-                {msg.content}
+            <div key={msg.id} className="flex flex-col space-y-1">
+              {/* DATA I GODZINA NAD WIADOMOŚCIĄ */}
+              <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                <span className="text-[10px] font-bold text-slate-400 px-1 uppercase tracking-tighter">
+                  {formatMessageDate(msg.created_at)}
+                </span>
+              </div>
+
+              {/* DYMEK WIADOMOŚCI */}
+              <div className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] md:max-w-[75%] px-4 py-2 rounded-2xl text-sm shadow-sm ${
+                  isMe 
+                    ? 'bg-blue-600 text-white rounded-tr-sm' 
+                    : 'bg-white border border-slate-200 text-slate-800 rounded-tl-sm'
+                }`}>
+                  {msg.content}
+                </div>
               </div>
             </div>
           )
@@ -89,7 +108,7 @@ export default function ChatWindow({
         <div ref={bottomRef} />
       </div>
 
-      {/* Pole wpisywania - poprawione paddingi dla mobile */}
+      {/* Pole wpisywania */}
       <div className="p-3 bg-white border-t border-slate-200 shrink-0 pb-safe">
         <form onSubmit={handleSend} className="flex gap-2 items-end">
           <textarea 
