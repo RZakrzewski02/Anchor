@@ -3,12 +3,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-// 1. Tworzenie powiadomienia (poprawione logowanie błędów)
+// 1. Tworzenie powiadomienia
 export async function createNotification(
   userId: string, 
-  type: 'comment' | 'reply' | 'assignment' | 'invitation', 
+  // Rozszerzony typ o 'friend_req'
+  type: 'comment' | 'reply' | 'assignment' | 'invitation' | 'friend_req', 
   resourceId: string, 
-  resourceType: 'task' | 'project',
+  // Rozszerzony typ zasobu o 'profile' i 'friendship'
+  resourceType: 'task' | 'project' | 'profile' | 'friendship',
   metaData: any = {}
 ) {
   const supabase = await createClient()
@@ -39,13 +41,12 @@ export async function createNotification(
 
   if (error) {
     console.error("❌ BŁĄD SUPABASE PRZY WYSYŁANIU:", error.message, error.details)
-    // Częsty błąd RLS to: "new row violates row-level security policy for table..."
   } else {
     console.log("✅ SUKCES! Powiadomienie zapisane w bazie.")
   }
 }
 
-// ... reszta funkcji (acceptInvitation, declineInvitation, markAsRead) bez zmian ...
+// 2. Akceptacja zaproszenia do PROJEKTU
 export async function acceptInvitation(notificationId: string, projectId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -65,6 +66,7 @@ export async function acceptInvitation(notificationId: string, projectId: string
   revalidatePath('/dashboard/projects')
 }
 
+// 3. Odrzucenie zaproszenia do PROJEKTU
 export async function declineInvitation(notificationId: string, projectId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -79,12 +81,14 @@ export async function declineInvitation(notificationId: string, projectId: strin
   revalidatePath('/dashboard')
 }
 
+// 4. Oznaczenie jako przeczytane
 export async function markAsRead(notificationId: string) {
   const supabase = await createClient()
   await supabase.from('notifications').update({ is_read: true }).eq('id', notificationId)
   revalidatePath('/dashboard/notifications')
 }
 
+// 5. Usuwanie powiadomienia
 export async function deleteNotification(notificationId: string) {
   const supabase = await createClient()
   

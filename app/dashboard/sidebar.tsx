@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Anchor, LayoutDashboard, FolderKanban, Settings, LogOut, Menu, X, User, Bell } from 'lucide-react'
+import { Anchor, LayoutDashboard, FolderKanban, Settings, LogOut, Menu, X, User, Bell, Users } from 'lucide-react'
 import { signOut } from './actions'
 
 // Definicja typu profilu zgodna z tym, co zwraca Supabase
@@ -30,7 +30,7 @@ export default function Sidebar({ userEmail, userProfile, unreadCount }: Sidebar
   const menuItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/projects', label: 'Projekty', icon: FolderKanban },
-    // NOWE: Powiadomienia z przekazanym licznikiem (badge)
+    { href: '/dashboard/friends', label: 'Znajomi', icon: Users},
     { href: '/dashboard/notifications', label: 'Powiadomienia', icon: Bell, badge: unreadCount },
     { href: '/dashboard/settings', label: 'Ustawienia', icon: Settings },
   ]
