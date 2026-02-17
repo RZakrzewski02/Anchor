@@ -76,11 +76,18 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
     }
   }
 
+  // Logika widoczności dla mobile
+  const isChatOpen = !!searchParams.chatWith
+
   return (
-    <div className="flex flex-col md:flex-row h-full bg-white border border-slate-200 overflow-hidden shadow-sm">
+    <div className="flex h-full bg-white">
       
       {/* LEWA STRONA: Lista znajomych */}
-      <div className="w-full md:w-80 border-r border-slate-200 flex flex-col bg-slate-50 shrink-0">
+      {/* Na mobile: ukryta gdy czat jest otwarty (hidden), widoczna gdy czat zamknięty (flex) */}
+      <div className={`
+        ${isChatOpen ? 'hidden md:flex' : 'flex'} 
+        w-full md:w-80 border-r border-slate-200 flex-col bg-slate-50 shrink-0 h-full pt-16 md:pt-0
+      `}>
         <div className="p-4 border-b border-slate-200 bg-white">
           <h1 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
             <UserPlus className="text-blue-600" size={20} /> Znajomi
@@ -103,7 +110,6 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
                        {req.avatar_url ? (
                          <img src={req.avatar_url} className="w-full h-full object-cover" alt="" />
                        ) : (
-                         // ZMIANA: Ikona User zamiast litery
                          <User size={14} />
                        )}
                     </div>
@@ -127,7 +133,6 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
               href={`/dashboard/friends?chatWith=${friend.id}`}
               className={`flex items-center gap-3 p-2.5 rounded-lg transition-all ${searchParams.chatWith === friend.id ? 'bg-blue-600 shadow-md ring-1 ring-blue-400' : 'hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200'}`}
             >
-              {/* ZMIANA: Używamy komponentu Client Component do obsługi statusu */}
               <AvatarWithStatus 
                 userId={friend.id}
                 avatarUrl={friend.avatar_url}
@@ -149,7 +154,10 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
       </div>
 
       {/* PRAWA STRONA: Okno czatu */}
-      <div className="hidden md:flex flex-1 flex-col bg-slate-50 relative h-full overflow-hidden">
+      <div className={`
+        ${isChatOpen ? 'fixed inset-0 z-50 md:relative md:inset-auto md:flex' : 'hidden md:flex'} 
+        flex-1 flex-col bg-white md:bg-slate-50 h-full overflow-hidden
+      `}>
         {activeFriend ? (
           <ChatWindow 
             messages={messages} 
@@ -159,7 +167,7 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
             friendAvatar={activeFriend.avatar_url}
           />
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-300">
+          <div className="hidden md:flex flex-1 flex-col items-center justify-center text-slate-300">
             <MessageSquare size={48} className="mb-4 opacity-40" />
             <p className="text-sm font-medium">Wybierz znajomego, aby rozpocząć czat</p>
           </div>
