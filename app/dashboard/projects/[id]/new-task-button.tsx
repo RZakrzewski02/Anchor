@@ -23,6 +23,9 @@ export default function NewTaskButton({
   const [isOpen, setIsOpen] = useState(false)
   const [selectedAssignee, setSelectedAssignee] = useState('unassigned')
   const [isLoading, setIsLoading] = useState(false)
+  
+  // NOWE: Stan do śledzenia wybranej specjalizacji "w locie"
+  const [currentSpecialization, setCurrentSpecialization] = useState('frontend')
 
   async function handleSubmit(formData: FormData) {
     setIsLoading(true)
@@ -34,6 +37,7 @@ export default function NewTaskButton({
     } else {
       setIsOpen(false)
       setSelectedAssignee('unassigned')
+      setCurrentSpecialization('frontend') // Reset specjalizacji po sukcesie
     }
   }
 
@@ -49,12 +53,11 @@ export default function NewTaskButton({
 
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          {/* USUNIĘTO overflow-hidden, DODANO relative */}
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg border border-slate-200 relative">
             
             <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
               <h3 className="font-bold text-slate-800 text-lg">Nowe zadanie</h3>
-              <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-200 transition-colors">
+              <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-700 p-1 rounded-full hover:bg-slate-200 transition-colors cursor-pointer">
                 <X size={20} />
               </button>
             </div>
@@ -67,7 +70,13 @@ export default function NewTaskButton({
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><Tag size={14}/> Specjalizacja</label>
-                <select name="specialization" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                {/* ZMIANA: Pole select jest teraz kontrolowane przez stan currentSpecialization */}
+                <select 
+                  name="specialization" 
+                  value={currentSpecialization}
+                  onChange={(e) => setCurrentSpecialization(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                >
                   <option value="frontend">Frontend</option>
                   <option value="backend">Backend</option>
                   <option value="mobile developer">Mobile Developer</option>
@@ -93,18 +102,20 @@ export default function NewTaskButton({
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><User size={14}/> Przypisz do</label>
+                {/* ZMIANA: Przekazujemy taskSpecialization={currentSpecialization} */}
                 <AssigneeSelect 
                   name="assignee_id"
                   members={members}
                   selectedId={selectedAssignee}
                   onSelect={setSelectedAssignee}
                   currentUserId={currentUserId}
+                  taskSpecialization={currentSpecialization}
                 />
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setIsOpen(false)} className="flex-1 bg-white border border-slate-300 text-slate-700 font-bold py-2.5 rounded-lg hover:bg-slate-50 transition-colors">Anuluj</button>
-                <button disabled={isLoading} type="submit" className="flex-1 bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 shadow-md">
+                <button type="button" onClick={() => setIsOpen(false)} className="flex-1 bg-white border border-slate-300 text-slate-700 font-bold py-2.5 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">Anuluj</button>
+                <button disabled={isLoading} type="submit" className="flex-1 bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 shadow-md cursor-pointer disabled:opacity-50">
                   {isLoading && <Loader2 size={18} className="animate-spin" />}
                   {isLoading ? 'Zapisywanie...' : 'Utwórz zadanie'}
                 </button>

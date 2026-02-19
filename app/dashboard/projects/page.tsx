@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { FolderKanban, FolderCheck, Lock } from 'lucide-react'
 import Link from 'next/link'
 import NewProjectButton from './new-project-button'
+import EditProjectButton from './edit-project-button'
 
 export default async function ProjectsPage() {
   const supabase = await createClient()
@@ -64,9 +65,10 @@ export default async function ProjectsPage() {
 
 function ProjectCard({ project, isCompleted }: { project: any, isCompleted?: boolean }) {
   const content = (
-    <div className={`p-5 bg-white border border-slate-200 rounded-xl shadow-sm transition-all h-full ${
+    <div className={`p-5 bg-white border border-slate-200 rounded-xl shadow-sm transition-all h-full relative ${
       isCompleted ? 'bg-slate-50/50 border-slate-100' : 'hover:border-blue-400 hover:shadow-md'
     }`}>
+      {/* ZMIANA: Dodano EditProjectButton po prawej stronie */}
       <div className="flex justify-between items-start mb-4">
         <div className={`p-2.5 rounded-lg transition-colors ${
           isCompleted 
@@ -75,7 +77,15 @@ function ProjectCard({ project, isCompleted }: { project: any, isCompleted?: boo
         }`}>
           {isCompleted ? <Lock size={20} /> : <FolderKanban size={20} />}
         </div>
+        
+        {/* Przycisk edycji widoczny tylko dla aktywnych projektów */}
+        {!isCompleted && (
+          <div className="relative z-10">
+            <EditProjectButton project={project} />
+          </div>
+        )}
       </div>
+
       <h3 className={`font-bold text-lg mb-2 truncate ${isCompleted ? 'text-slate-400' : 'text-slate-900'}`}>
         {project.name}
       </h3>
@@ -90,7 +100,7 @@ function ProjectCard({ project, isCompleted }: { project: any, isCompleted?: boo
   }
 
   return (
-    <Link href={`/dashboard/projects/${project.id}`} className="group block">
+    <Link href={`/dashboard/projects/${project.id}`} className="group block h-full">
       {content}
     </Link>
   )

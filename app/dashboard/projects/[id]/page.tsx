@@ -9,6 +9,7 @@ import TaskItem from './task-item'
 import CreateSprintButton from './create-sprint-button'
 import CompleteSprintButton from './sprint/[sprintId]/complete-button'
 import CompleteProjectButton from './complete-project-button'
+import WorkloadChart from './workload-chart'
 
 import { 
   Layers, 
@@ -52,16 +53,33 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     .select('id, first_name, last_name, full_name, avatar_url')
     .in('id', userIds)
 
+  const { data: experienceRaw } = await supabase
+  .from('user_exp')
+  .select('user_id, specialization, exp')
+  .in('user_id', userIds)
+
+  const { data: tasks } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('project_id', id)
+    .order('created_at', { ascending: false })
+
   // 3. ŁĄCZYMY DANE
-  const allMembers = membersRaw?.map(member => ({
-    ...member,
-    profiles: profilesRaw?.find(p => p.id === member.user_id) || null
-  })) || []
+  const allMembers = membersRaw?.map(member => {
+    const activeTasksCount = tasks?.filter(t => t.assignee_id === member.user_id && t.status !== 'done').length || 0
+
+    return {
+      ...member,
+      profiles: profilesRaw?.find(p => p.id === member.user_id) || null,
+      experience: experienceRaw?.filter(e => e.user_id === member.user_id) || [],
+      taskCount: activeTasksCount
+    }
+  }) || []
 
   // Pobieranie Sprintów i Zadań
   const { data: activeSprint } = await supabase.from('sprints').select('id, name').eq('project_id', id).eq('status', 'active').maybeSingle()
   const { data: completedSprints } = await supabase.from('sprints').select('id, name, created_at').eq('project_id', id).eq('status', 'completed').order('created_at', { ascending: false })
-  const { data: tasks } = await supabase.from('tasks').select('*').eq('project_id', id).order('created_at', { ascending: false })
+  //const { data: tasks } = await supabase.from('tasks').select('*').eq('project_id', id).order('created_at', { ascending: false })
 
   const sprintTasks = tasks?.filter(t => t.sprint_id === activeSprint?.id && t.sprint_id !== null) || []
   const backlogTasks = tasks?.filter(t => !t.sprint_id) || []
@@ -92,11 +110,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         )}
       </div>
 
-      <div className="flex flex-col lg:flex-row flex-1">
+      <div className="flex flex-col lg:flex-row flex-1 ">
         <main className="flex-1 flex flex-col border-r border-slate-200">
           
           {/* --- Sekcja Aktywnego Sprintu --- */}
-          <div className="p-8 border-b border-slate-200">
+          <div className="p-8 border-b border-slate-200 bg-white ">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
@@ -110,7 +128,14 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                     <Link href={`/dashboard/projects/${id}/sprint/${activeSprint.id}`} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-all text-sm shadow-md flex items-center gap-2">
                       <LayoutDashboard size={16} /> Tablica
                     </Link>
-                    {isManager && <CompleteSprintButton projectId={id} sprintId={activeSprint.id} />}
+                    {isManager && (
+                      <CompleteSprintButton 
+                        projectId={id} 
+                        sprintId={activeSprint.id} 
+                        sprintName={activeSprint.name}
+                        sprintTasks={sprintTasks} 
+                      />
+                    )}
                   </>
                 ) : (
                   isManager && <CreateSprintButton projectId={id} />
@@ -125,9 +150,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* --- Sekcja Backlogu --- */}
-          <div className="p-8 flex-1 bg-slate-50/30">
+          <div className="p-8 flex-1 bg-white">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2"><ListTodo className="text-indigo-600" size={24} /> Backlog</h2>
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2"><ListTodo className="text-blue-600" size={24} /> Backlog</h2>
               <NewTaskButton projectId={id} members={allMembers} currentUserId={user.id} />
             </div>
             <div className="space-y-3">
@@ -137,10 +162,16 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
+          <div className="p-4 md:p-8 border-t border-slate-200 bg-white">
+            <div className="p-4 md:px-8">
+              <WorkloadChart members={allMembers} />
+            </div>
+          </div>
+
           {/* --- Historia --- */}
           <div className="p-4 md:p-8 border-t border-slate-200 bg-white">
             <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+              <div className="p-2 text-emerald-600 rounded-lg">
                 <CheckCircle2 size={24} />
               </div>
               <div>
@@ -164,7 +195,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-100 px-2 py-0.5 rounded-full bg-slate-50">
                             {task.specialization || 'General'}
                           </span>
-                          {/* Ikona sukcesu */}
                           <div className="text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">
                             <CheckCircle2 size={16} />
                           </div>

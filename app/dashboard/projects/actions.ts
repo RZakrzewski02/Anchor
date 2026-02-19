@@ -46,3 +46,22 @@ export async function createProject(formData: FormData) {
   revalidatePath('/dashboard/projects')
   return { success: true }
 }
+
+export async function updateProject(projectId: string, formData: FormData) {
+  const supabase = await createClient()
+  
+  const name = formData.get('name') as string
+  const description = formData.get('description') as string
+
+  const { error } = await supabase
+    .from('projects')
+    .update({ name, description })
+    .eq('id', projectId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath('/dashboard/projects')
+  return { success: true }
+}

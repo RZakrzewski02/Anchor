@@ -71,7 +71,8 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
           
           {/* NAGŁÓWEK MIESIĘCY */}
           <div className="flex border-b border-slate-100 bg-slate-50/50">
-            <div className="w-48 shrink-0 border-r border-slate-100 p-4 font-bold text-[10px] text-slate-400 uppercase tracking-widest">
+            {/* ZMIANA 1: Poszerzona kolumna z w-48 na w-72 */}
+            <div className="w-72 shrink-0 border-r border-slate-100 p-4 font-bold text-[10px] text-slate-400 uppercase tracking-widest flex items-center">
               Zadanie
             </div>
             <div className="flex-1 flex">
@@ -104,13 +105,24 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
               const widthSize = (durationDays / totalDays) * 100
 
               return (
-                <div key={task.id} className="flex items-center border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                  <div className="w-48 shrink-0 p-4 border-r border-slate-100">
-                    <p className="text-sm font-bold text-slate-800 truncate">{task.title}</p>
-                    <span className="text-[10px] font-bold text-blue-500 uppercase">{task.specialization}</span>
+                <div key={task.id} className="flex items-stretch border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                  
+                  {/* ZMIANA 2: Poszerzona kolumna na zadania (w-72) */}
+                  <div className="w-72 shrink-0 p-4 border-r border-slate-100 flex flex-col justify-center bg-white z-10">
+                    {/* ZMIANA 3: Usunięto 'truncate', dodano 'line-clamp-2' i 'title' */}
+                    <p 
+                      className="text-sm font-bold text-slate-800 line-clamp-2 leading-snug" 
+                      title={task.title}
+                    >
+                      {task.title}
+                    </p>
+                    <span className="text-[10px] font-bold text-blue-500 uppercase mt-1">
+                      {task.specialization}
+                    </span>
                   </div>
 
-                  <div className="flex-1 h-14 relative flex items-center px-0">
+                  {/* PRAWA STRONA (Paski osi czasu) */}
+                  <div className="flex-1 min-h-16 relative flex items-center px-0">
                     <div 
                       className={`h-8 rounded-lg shadow-sm flex items-center px-3 text-[10px] font-bold text-white whitespace-nowrap overflow-hidden group ${
                         task.status === 'done' ? 'bg-emerald-500' : 'bg-blue-600'
@@ -124,6 +136,7 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
                       {formatShortDate(taskStart)} - {formatShortDate(taskEnd)}
                     </div>
                   </div>
+                  
                 </div>
               )
             })}

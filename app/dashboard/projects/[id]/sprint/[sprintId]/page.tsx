@@ -9,38 +9,56 @@ export default async function SprintPage({ params }: { params: Promise<{ id: str
   const { id, sprintId } = await params
   const supabase = await createClient()
 
-  // Pobierz dane sprintu i zadania
+  // 1. Pobieranie sprintu i zadań
   const { data: sprint } = await supabase.from('sprints').select('*').eq('id', sprintId).single()
   const { data: tasks } = await supabase.from('tasks').select('*').eq('sprint_id', sprintId)
-  const { data: members } = await supabase.from('project_members').select('user_id, role').eq('project_id', id)
-
+  
   if (!sprint) notFound()
 
+  // 2. Pobieranie członków i ich profili (aby mieć awatary na tablicy)
+  const { data: membersRaw } = await supabase.from('project_members').select('user_id, role').eq('project_id', id)
+  const userIds = membersRaw?.map(m => m.user_id) || []
+  
+  const { data: profilesRaw } = await supabase
+    .from('profiles')
+    .select('id, first_name, last_name, full_name, avatar_url')
+    .in('id', userIds)
+
+  // Łączymy w jeden obiekt
+  const allMembers = membersRaw?.map(member => ({
+    ...member,
+    profiles: profilesRaw?.find(p => p.id === member.user_id) || null
+  })) || []
+
   return (
-    <div className="p-8 bg-slate-50 min-h-screen text-slate-900">
-      {/* Header */}
-      <header className="mb-8">
-        <Link href={`/dashboard/projects/${id}`} className="text-slate-500 hover:text-slate-800 flex items-center gap-1 text-sm mb-4 transition-colors">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      
+      <div className="bg-white border-b border-slate-200 px-4 py-5 md:px-8 md:py-6 pt-16 md:pt-6 relative lg:sticky lg:top-0 z-40 shadow-sm">
+        
+        <Link 
+          href={`/dashboard/projects/${id}`} 
+          className="inline-flex items-center gap-1 w-fit text-slate-500 hover:text-blue-600 text-sm font-bold mb-4 transition-colors py-1 pr-2 -ml-1 rounded-lg hover:bg-slate-50"
+        >
           <ChevronLeft size={16} /> Powrót do projektu
         </Link>
+        
         <div className="flex justify-between items-end">
           <div>
-            <h1 className="text-3xl font-bold">{sprint.name}</h1>
-            <p className="text-slate-500">Zarządzanie zadaniami i harmonogramem cyklu</p>
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight">{sprint.name}</h1>
+            <p className="text-slate-500 text-sm md:text-base mt-1">Zarządzanie zadaniami i harmonogramem cyklu</p>
           </div>
         </div>
-      </header>
+      </div>
 
-      <div className="space-y-12">
-        {/* Sekcja 1: Tablica Kanban */}
+      {/* GŁÓWNA ZAWARTOŚĆ: Tablica i Roadmapa */}
+      <div className="p-4 md:p-8 space-y-12 bg-white">
         <section>
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <LayoutPanelLeft className="text-blue-600" size={20} /> Tablica Kanban
           </h2>
-          <KanbanBoard tasks={tasks || []} projectId={id} />
+          <KanbanBoard tasks={tasks || []} projectId={id} members={allMembers} />
         </section>
 
-        {/* Sekcja 2: Roadmapa */}
         <section>
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <GanttChartSquare className="text-indigo-600" size={20} /> Roadmapa Sprintu
@@ -48,6 +66,7 @@ export default async function SprintPage({ params }: { params: Promise<{ id: str
           <Roadmap tasks={tasks || []} />
         </section>
       </div>
+
     </div>
   )
 }

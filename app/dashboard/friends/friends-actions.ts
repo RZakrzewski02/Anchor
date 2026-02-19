@@ -123,3 +123,29 @@ export async function declineFriendRequestFromNotification(senderId: string, not
   revalidatePath('/dashboard/friends')
   revalidatePath('/dashboard/notifications')
 }
+
+export async function removeFriend(friendId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return { error: 'Brak autoryzacji' }
+
+  await createNotification(
+    friendId, 
+    'friend_removed', 
+    user.id, 
+    'profile',
+    { message: 'Ten użytkownik usunął Cię ze swojej listy znajomych.' }
+  )
+
+  const { error } = await supabase
+    .from('friendships')
+    .delete()
+    .or(`and(requester_id.eq.${user.id},addressee_id.eq.${friendId}),and(requester_id.eq.${friendId},addressee_id.eq.${user.id})`)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/dashboard/friends')
+  
+  return { success: true }
+}
