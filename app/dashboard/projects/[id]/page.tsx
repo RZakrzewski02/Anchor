@@ -57,17 +57,28 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   .select('user_id, specialization, exp')
   .in('user_id', userIds)
 
+  const { data: tasks } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('project_id', id)
+    .order('created_at', { ascending: false })
+
   // 3. ŁĄCZYMY DANE
-  const allMembers = membersRaw?.map(member => ({
-    ...member,
-    profiles: profilesRaw?.find(p => p.id === member.user_id) || null,
-    experience: experienceRaw?.filter(e => e.user_id === member.user_id) || []
-  })) || []
+  const allMembers = membersRaw?.map(member => {
+    const activeTasksCount = tasks?.filter(t => t.assignee_id === member.user_id && t.status !== 'done').length || 0
+
+    return {
+      ...member,
+      profiles: profilesRaw?.find(p => p.id === member.user_id) || null,
+      experience: experienceRaw?.filter(e => e.user_id === member.user_id) || [],
+      taskCount: activeTasksCount
+    }
+  }) || []
 
   // Pobieranie Sprintów i Zadań
   const { data: activeSprint } = await supabase.from('sprints').select('id, name').eq('project_id', id).eq('status', 'active').maybeSingle()
   const { data: completedSprints } = await supabase.from('sprints').select('id, name, created_at').eq('project_id', id).eq('status', 'completed').order('created_at', { ascending: false })
-  const { data: tasks } = await supabase.from('tasks').select('*').eq('project_id', id).order('created_at', { ascending: false })
+  //const { data: tasks } = await supabase.from('tasks').select('*').eq('project_id', id).order('created_at', { ascending: false })
 
   const sprintTasks = tasks?.filter(t => t.sprint_id === activeSprint?.id && t.sprint_id !== null) || []
   const backlogTasks = tasks?.filter(t => !t.sprint_id) || []
