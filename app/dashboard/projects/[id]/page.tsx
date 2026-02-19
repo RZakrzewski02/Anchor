@@ -127,7 +127,14 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                     <Link href={`/dashboard/projects/${id}/sprint/${activeSprint.id}`} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-all text-sm shadow-md flex items-center gap-2">
                       <LayoutDashboard size={16} /> Tablica
                     </Link>
-                    {isManager && <CompleteSprintButton projectId={id} sprintId={activeSprint.id} />}
+                    {isManager && (
+                      <CompleteSprintButton 
+                        projectId={id} 
+                        sprintId={activeSprint.id} 
+                        sprintName={activeSprint.name}
+                        sprintTasks={sprintTasks} 
+                      />
+                    )}
                   </>
                 ) : (
                   isManager && <CreateSprintButton projectId={id} />
