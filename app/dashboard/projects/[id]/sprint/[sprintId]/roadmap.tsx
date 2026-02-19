@@ -1,22 +1,34 @@
 'use client'
 
 import { useMemo } from 'react'
-import { format, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, startOfDay } from 'date-fns'
 
 export default function Roadmap({ tasks }: { tasks: any[] }) {
-  // 1. Filtrujemy zadania z datami
+  // 1. Filtrujemy i sortujemy zadania
   const datedTasks = useMemo(() => {
-    return tasks
+    return (tasks || [])
       .filter(t => t.start_date && t.end_date)
       .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
   }, [tasks])
 
-  // Pomocnicza funkcja do formatowania miesiąca (zamiast date-fns locale)
+  // POMOCNICZE FUNKCJE ZASTĘPUJĄCE DATE-FNS:
+  const getStartOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
+  const getEndOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const getStartOfDay = (date: Date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+  const diffInDays = (end: Date, start: Date) => {
+    return Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
   const formatMonthHeader = (date: Date) => {
-    const formatter = new Intl.DateTimeFormat('pl-PL', { month: 'long', year: 'numeric' });
-    const formatted = formatter.format(date);
-    // Powiększamy pierwszą literę (styczeń -> Styczeń)
+    const formatted = new Intl.DateTimeFormat('pl-PL', { month: 'long', year: 'numeric' }).format(date);
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  };
+
+  const formatShortDate = (date: Date) => {
+    return `${date.getDate()}.${String(date.getMonth() + 1).padStart(2, '0')}`;
   };
 
   // 2. Obliczamy zakres osi czasu
@@ -26,11 +38,18 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
     const starts = datedTasks.map(t => new Date(t.start_date).getTime())
     const ends = datedTasks.map(t => new Date(t.end_date).getTime())
 
-    const minDate = startOfMonth(new Date(Math.min(...starts)))
-    const maxDate = endOfMonth(new Date(Math.max(...ends)))
+    const minDate = getStartOfMonth(new Date(Math.min(...starts)))
+    const maxDate = getEndOfMonth(new Date(Math.max(...ends)))
 
-    const totalDays = differenceInDays(maxDate, minDate) + 1
-    const months = eachMonthOfInterval({ start: minDate, end: maxDate })
+    const totalDays = diffInDays(maxDate, minDate) + 1
+
+    // Generujemy listę miesięcy
+    const months = [];
+    let current = new Date(minDate);
+    while (current <= maxDate) {
+      months.push(new Date(current));
+      current.setMonth(current.getMonth() + 1);
+    }
 
     return { minDate, maxDate, totalDays, months }
   }, [datedTasks])
@@ -57,7 +76,7 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
             </div>
             <div className="flex-1 flex">
               {months.map((month, idx) => {
-                const daysInMonth = differenceInDays(endOfMonth(month), startOfMonth(month)) + 1
+                const daysInMonth = diffInDays(getEndOfMonth(month), getStartOfMonth(month)) + 1
                 const widthPercent = (daysInMonth / totalDays) * 100
                 return (
                   <div 
@@ -65,7 +84,6 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
                     className="p-3 text-center border-r border-slate-100 text-xs font-bold text-slate-600 truncate"
                     style={{ width: `${widthPercent}%` }}
                   >
-                    {/* ZAMIANA: Używamy Intl zamiast format(..., {locale: pl}) */}
                     {formatMonthHeader(month)}
                   </div>
                 )
@@ -76,11 +94,11 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
           {/* OŚ CZASU ZADANIA */}
           <div className="relative">
             {datedTasks.map((task) => {
-              const taskStart = startOfDay(new Date(task.start_date))
-              const taskEnd = startOfDay(new Date(task.end_date))
+              const taskStart = getStartOfDay(new Date(task.start_date))
+              const taskEnd = getStartOfDay(new Date(task.end_date))
               
-              const offsetDays = differenceInDays(taskStart, minDate)
-              const durationDays = differenceInDays(taskEnd, taskStart) + 1
+              const offsetDays = diffInDays(taskStart, minDate)
+              const durationDays = diffInDays(taskEnd, taskStart) + 1
               
               const leftPos = (offsetDays / totalDays) * 100
               const widthSize = (durationDays / totalDays) * 100
@@ -103,8 +121,7 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
                         position: 'absolute'
                       }}
                     >
-                      {/* Tutaj formatowanie liczbowe 'd.MM' nie wymaga locale, więc zostaje bez zmian */}
-                      {format(taskStart, 'd.MM')} - {format(taskEnd, 'd.MM')}
+                      {formatShortDate(taskStart)} - {formatShortDate(taskEnd)}
                     </div>
                   </div>
                 </div>
