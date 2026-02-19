@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react'
 import { format, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, startOfDay } from 'date-fns'
-import { pl } from 'date-fns/locale'
 
 export default function Roadmap({ tasks }: { tasks: any[] }) {
   // 1. Filtrujemy zadania z datami
@@ -11,6 +10,14 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
       .filter(t => t.start_date && t.end_date)
       .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
   }, [tasks])
+
+  // Pomocnicza funkcja do formatowania miesiąca (zamiast date-fns locale)
+  const formatMonthHeader = (date: Date) => {
+    const formatter = new Intl.DateTimeFormat('pl-PL', { month: 'long', year: 'numeric' });
+    const formatted = formatter.format(date);
+    // Powiększamy pierwszą literę (styczeń -> Styczeń)
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  };
 
   // 2. Obliczamy zakres osi czasu
   const timelineRange = useMemo(() => {
@@ -36,8 +43,7 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
     )
   }
 
-  const { minDate, maxDate, totalDays, months } = timelineRange
-  const today = startOfDay(new Date())
+  const { minDate, totalDays, months } = timelineRange
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm text-slate-900">
@@ -59,7 +65,8 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
                     className="p-3 text-center border-r border-slate-100 text-xs font-bold text-slate-600 truncate"
                     style={{ width: `${widthPercent}%` }}
                   >
-                    {format(month, 'LLLL yyyy', { locale: pl })}
+                    {/* ZAMIANA: Używamy Intl zamiast format(..., {locale: pl}) */}
+                    {formatMonthHeader(month)}
                   </div>
                 )
               })}
@@ -96,6 +103,7 @@ export default function Roadmap({ tasks }: { tasks: any[] }) {
                         position: 'absolute'
                       }}
                     >
+                      {/* Tutaj formatowanie liczbowe 'd.MM' nie wymaga locale, więc zostaje bez zmian */}
                       {format(taskStart, 'd.MM')} - {format(taskEnd, 'd.MM')}
                     </div>
                   </div>
