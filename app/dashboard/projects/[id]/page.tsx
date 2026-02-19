@@ -52,10 +52,16 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     .select('id, first_name, last_name, full_name, avatar_url')
     .in('id', userIds)
 
+  const { data: experienceRaw } = await supabase
+  .from('user_exp')
+  .select('user_id, specialization, exp')
+  .in('user_id', userIds)
+
   // 3. ŁĄCZYMY DANE
   const allMembers = membersRaw?.map(member => ({
     ...member,
-    profiles: profilesRaw?.find(p => p.id === member.user_id) || null
+    profiles: profilesRaw?.find(p => p.id === member.user_id) || null,
+    experience: experienceRaw?.filter(e => e.user_id === member.user_id) || []
   })) || []
 
   // Pobieranie Sprintów i Zadań

@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { User, Check, ChevronDown } from 'lucide-react'
+import { User, Check, ChevronDown, Zap } from 'lucide-react'
 
-export default function AssigneeSelect({ members, selectedId, onSelect, currentUserId, name }: any) {
+// Dodajemy taskSpecialization do propsów
+export default function AssigneeSelect({ members, selectedId, onSelect, currentUserId, name, taskSpecialization }: any) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -37,7 +38,7 @@ export default function AssigneeSelect({ members, selectedId, onSelect, currentU
               <User size={12} className="text-slate-400" />
             )}
           </div>
-          <span className="truncate">
+          <span className="truncate font-medium">
             {selectedId === 'unassigned' || !selectedId ? '-- Nieprzypisane --' : 
              (selectedId === currentUserId ? 'Ty' : selectedProfile?.full_name || 'Członek zespołu')}
           </span>
@@ -47,7 +48,7 @@ export default function AssigneeSelect({ members, selectedId, onSelect, currentU
 
       {isOpen && (
         <div className="absolute z-100 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100">
-          <div className="max-h-48 overflow-y-auto overscroll-contain">
+          <div className="max-h-48 overflow-y-auto overscroll-contain custom-scrollbar">
             {/* Opcja: Nieprzypisane */}
             <div 
               onClick={() => { onSelect('unassigned'); setIsOpen(false); }}
@@ -63,13 +64,19 @@ export default function AssigneeSelect({ members, selectedId, onSelect, currentU
             {members.map((m: any) => {
               const p = m.profiles
               const isSelected = m.user_id === selectedId
+              
+              // LOGIKA POZIOMÓW (taka sama jak na profilu)
+              const specStats = m.experience?.find((e: any) => e.specialization === taskSpecialization)
+              const exp = specStats?.exp || 0
+              const level = Math.floor(exp / 100) // 100 EXP = 1 LVL
+
               return (
                 <div
                   key={m.user_id}
                   onClick={() => { onSelect(m.user_id); setIsOpen(false); }}
-                  className="flex items-center justify-between px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm group border-b border-slate-50 last:border-0"
+                  className="flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 cursor-pointer text-sm group border-b border-slate-50 last:border-0"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
                       {p?.avatar_url ? (
                         <img src={p.avatar_url} className="w-full h-full object-cover" />
@@ -77,11 +84,19 @@ export default function AssigneeSelect({ members, selectedId, onSelect, currentU
                         <User size={12} className="text-slate-400" />
                       )}
                     </div>
-                    <span className={isSelected ? "font-bold text-blue-600" : "text-slate-700"}>
+                    <span className={`truncate ${isSelected ? "font-bold text-blue-600" : "text-slate-700 font-medium"}`}>
                       {m.user_id === currentUserId ? 'Ty' : p?.full_name || 'Członek zespołu'}
                     </span>
                   </div>
-                  {isSelected && <Check size={14} className="text-blue-600 shrink-0" />}
+
+                  {/* PLAKIETKA LVL */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-black uppercase border border-blue-200 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-colors">
+                      <Zap size={10} className={level > 0 ? "fill-current" : ""} />
+                      LVL {level}
+                    </div>
+                    {isSelected && <Check size={14} className="text-blue-600 shrink-0" />}
+                  </div>
                 </div>
               )
             })}
