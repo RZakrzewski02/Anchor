@@ -68,7 +68,6 @@ function ProjectCard({ project, isCompleted }: { project: any, isCompleted?: boo
     <div className={`p-5 bg-white border border-slate-200 rounded-xl shadow-sm transition-all h-full relative ${
       isCompleted ? 'bg-slate-50/50 border-slate-100' : 'hover:border-blue-400 hover:shadow-md'
     }`}>
-      {/* ZMIANA: Dodano EditProjectButton po prawej stronie */}
       <div className="flex justify-between items-start mb-4">
         <div className={`p-2.5 rounded-lg transition-colors ${
           isCompleted 
@@ -78,7 +77,6 @@ function ProjectCard({ project, isCompleted }: { project: any, isCompleted?: boo
           {isCompleted ? <Lock size={20} /> : <FolderKanban size={20} />}
         </div>
         
-        {/* Przycisk edycji widoczny tylko dla aktywnych projektów */}
         {!isCompleted && (
           <div className="relative z-10">
             <EditProjectButton project={project} />

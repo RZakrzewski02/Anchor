@@ -6,10 +6,8 @@ import { revalidatePath } from 'next/cache'
 // 1. Tworzenie powiadomienia
 export async function createNotification(
   userId: string, 
-  // Rozszerzony typ o 'friend_req'
   type: 'comment' | 'reply' | 'assignment' | 'invitation' | 'friend_req' | 'friend_removed', 
   resourceId: string, 
-  // Rozszerzony typ zasobu o 'profile' i 'friendship'
   resourceType: 'task' | 'project' | 'profile' | 'friendship',
   metaData: any = {}
 ) {
@@ -40,9 +38,9 @@ export async function createNotification(
   })
 
   if (error) {
-    console.error("❌ BŁĄD SUPABASE PRZY WYSYŁANIU:", error.message, error.details)
+    console.error("BŁĄD SUPABASE PRZY WYSYŁANIU:", error.message, error.details)
   } else {
-    console.log("✅ SUKCES! Powiadomienie zapisane w bazie.")
+    console.log("SUKCES! Powiadomienie zapisane w bazie.")
   }
 }
 

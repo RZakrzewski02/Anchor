@@ -30,7 +30,7 @@ export default function NewProjectButton() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="flex justify-between items-center p-4 border-b border-slate-100">
               <h3 className="font-bold text-slate-800">Utwórz nowy projekt</h3>
-              <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-700">
+              <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
                 <X size={20} />
               </button>
             </div>
@@ -46,7 +46,7 @@ export default function NewProjectButton() {
                 <textarea name="description" placeholder="Krótki opis..." className="w-full px-3 py-2 border text-slate-700 border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-20 resize-none" />
               </div>
 
-              <button disabled={isLoading} type="submit" className="bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition-colors flex justify-center items-center gap-2">
+              <button disabled={isLoading} type="submit" className="bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition-colors flex justify-center items-center gap-2 cursor-pointer">
                 {isLoading && <Loader2 size={18} className="animate-spin" />}
                 {isLoading ? 'Tworzenie...' : 'Utwórz projekt'}
               </button>

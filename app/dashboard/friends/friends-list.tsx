@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-// 1. Dodajemy 'User' do importów
 import { Search, UserPlus, Check, Loader2, User } from 'lucide-react'
 import { searchUsers, sendFriendRequest } from './friends-actions'
 
@@ -57,7 +56,6 @@ export default function FriendsList({ currentUserId, existingFriendIds }: { curr
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        // ZMIANA: Szare tło i ikona User ("ludek")
                         <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400">
                            <User size={14} />
                         </div>

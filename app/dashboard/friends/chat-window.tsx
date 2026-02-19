@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Send, User, ChevronLeft, UserX, AlertTriangle, X, Loader2 } from 'lucide-react'
-import { sendMessage, removeFriend } from './friends-actions' // Upewnij się, że masz removeFriend w akcjach
+import { sendMessage, removeFriend } from './friends-actions'
 import { usePresence } from './presence-provider'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'

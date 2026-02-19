@@ -1,11 +1,11 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client' // Upewnij się, że masz ten plik (Client Component client)
+import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 
 type PresenceContextType = {
-  onlineUsers: Set<string> // Zbiór ID użytkowników online
+  onlineUsers: Set<string>
   isUserOnline: (userId: string) => boolean
 }
 
@@ -22,8 +22,6 @@ export default function PresenceProvider({ children, user }: { children: React.R
 
   useEffect(() => {
     if (!user) return
-
-    // Tworzymy kanał do śledzenia obecności
     const channel = supabase.channel('global_presence')
 
     channel
@@ -31,13 +29,9 @@ export default function PresenceProvider({ children, user }: { children: React.R
         const newState = channel.presenceState()
         const onlineIds = new Set<string>()
         
-        // Wyciągamy ID wszystkich userów z obiektu presenceState
         for (const id in newState) {
-          // Supabase Presence zwraca tablicę obiektów dla każdego klucza
-          // Zakładamy, że kluczem śledzenia (track) był user_id lub przesyłamy go w payloadzie
           const presenceEntry = newState[id] as any[]
           if (presenceEntry && presenceEntry.length > 0) {
-             // W payloadzie .track() przekażemy user_id, więc go tu odczytujemy
              presenceEntry.forEach(entry => {
                if (entry.user_id) onlineIds.add(entry.user_id)
              })

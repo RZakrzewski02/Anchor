@@ -1,10 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-// ZMIANA: Dodano UserX do importu z lucide-react
 import { Bell, MessageSquare, UserPlus, CheckCircle2, Check, X, Trash2, UserX } from 'lucide-react'
 import { acceptInvitation, declineInvitation, markAsRead, deleteNotification } from '../notification-actions'
 import { acceptFriendRequestFromNotification, declineFriendRequestFromNotification } from '../friends/friends-actions'
+import RealtimeNotificationsListener from '../notifications-listener'
 
 export default async function NotificationsPage() {
   const supabase = await createClient()
@@ -30,7 +30,7 @@ export default async function NotificationsPage() {
 
   return (
     <div className="p-4 md:p-8 font-sans w-full h-full flex flex-col gap-8 bg-slate-50/30">
-      
+      {user && <RealtimeNotificationsListener userId={user.id} />}
       <header className="flex items-center gap-4 border-b border-slate-200 pb-6">
         <div className="p-3 bg-white border border-slate-200 text-blue-600 rounded-xl shadow-sm">
           <Bell size={24} />
@@ -67,20 +67,17 @@ function NotificationItem({ notification }: { notification: any }) {
   const actorProfile = notification.actor
   const actorName = actorProfile?.full_name || actorProfile?.email?.split('@')[0] || 'Użytkownik'
   
-  // ZMIANA: Obsługa linku dla friend_removed (kieruje do zakładki znajomych)
   const linkHref = notification.resource_type === 'task' 
     ? `/dashboard/projects/${notification.meta_data?.project_id}` 
     : (notification.type === 'friend_req' || notification.type === 'friend_removed') 
       ? '/dashboard/friends' 
       : (notification.type === 'invitation' ? '#' : `/dashboard/projects/${notification.resource_id}`)
 
-  // Sprawdzamy czy to zaproszenie (projektowe LUB do znajomych)
   const isInvitation = notification.type === 'invitation' || notification.type === 'friend_req'
 
   return (
     <div className={`p-4 md:p-5 rounded-xl border flex flex-col md:flex-row gap-4 transition-all items-start md:items-center ${isRead ? 'bg-white border-slate-100 opacity-60' : 'bg-white border-blue-200 shadow-sm hover:shadow-md'}`}>
       
-      {/* ZMIANA: Jeśli powiadomienie to friend_removed, dajemy czerwoną ikonkę dla ostrzeżenia (jeśli nie jest przeczytane) */}
       <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden ${
         isRead ? 'bg-slate-50 text-slate-400' : (notification.type === 'friend_removed' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-600')
       }`}>
@@ -91,7 +88,6 @@ function NotificationItem({ notification }: { notification: any }) {
             {isInvitation && <UserPlus size={18} />}
             {(notification.type === 'comment' || notification.type === 'reply') && <MessageSquare size={18} />}
             {notification.type === 'assignment' && <CheckCircle2 size={18} />}
-            {/* ZMIANA: Ikonka dla usunięcia */}
             {notification.type === 'friend_removed' && <UserX size={18} />} 
            </>
         )}
@@ -103,11 +99,9 @@ function NotificationItem({ notification }: { notification: any }) {
           
           {notification.type === 'invitation' && <span className="text-slate-600"> zaprasza Cię do projektu <span className="font-semibold text-slate-900">"{notification.meta_data?.project_name || 'Projekt'}"</span></span>}
           {notification.type === 'friend_req' && <span className="text-slate-600"> wysłał Ci zaproszenie do grona znajomych.</span>}
-          
           {notification.type === 'comment' && <span className="text-slate-600"> skomentował zadanie <span className="font-semibold text-slate-900">"{notification.meta_data?.task_title || 'Zadanie'}"</span></span>}
           {notification.type === 'reply' && <span className="text-slate-600"> odpowiedział na Twój komentarz w zadaniu <span className="font-semibold text-slate-900">"{notification.meta_data?.task_title || 'Zadanie'}"</span></span>}
           {notification.type === 'assignment' && <span className="text-slate-600"> przypisał Cię do zadania <span className="font-semibold text-slate-900">"{notification.meta_data?.task_title || 'Zadanie'}"</span></span>}
-          {/* ZMIANA: Tekst dla usunięcia ze znajomych */}
           {notification.type === 'friend_removed' && <span className="text-slate-600"> usunął/usunęła Cię ze swojej listy znajomych.</span>}
         </div>
         <div className="text-xs text-slate-400 font-medium">

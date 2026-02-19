@@ -1,4 +1,3 @@
-// app/dashboard/notifications-listener.tsx
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
@@ -15,12 +14,11 @@ export default function RealtimeNotificationsListener({ userId }: { userId: stri
       .on(
         'postgres_changes' as any,
         {
-          event: '*', // ZMIANA: Słuchaj na INSERT, UPDATE i DELETE
+          event: '*',
           table: 'notifications',
           filter: `user_id=eq.${userId}`
         },
         () => {
-          // To wymusi na layout.tsx ponowne pobranie 'count' z bazy
           router.refresh()
         }
       )

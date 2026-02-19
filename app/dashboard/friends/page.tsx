@@ -117,25 +117,7 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
-          {/* ZAPROSZENIA */}
-          {pendingRequests.length > 0 && (
-            <div className="mb-4">
-              <p className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Zaproszenia</p>
-              {pendingRequests.map(req => (
-                <div key={req.id} className="p-2 bg-white border border-orange-200 rounded-lg flex items-center justify-between shadow-sm mb-1">
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 overflow-hidden bg-orange-100 text-orange-600 font-bold text-[10px] border border-orange-200">
-                       {req.avatar_url ? <img src={req.avatar_url} className="w-full h-full object-cover" alt="" /> : <User size={12} />}
-                    </div>
-                    <span className="text-xs font-bold text-slate-700 truncate">{req.full_name}</span>
-                  </div>
-                  <form action={async () => { 'use server'; await acceptFriendRequest(req.friendshipId) }}>
-                     <button className="text-[10px] bg-blue-600 text-white px-2 py-1 rounded-md hover:bg-blue-700 font-bold transition-colors">Akceptuj</button>
-                  </form>
-                </div>
-              ))}
-            </div>
-          )}
+          
 
           {/* LISTA ZNAJOMYCH */}
           <p className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Znajomi ({acceptedFriends.length})</p>

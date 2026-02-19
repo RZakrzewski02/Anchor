@@ -19,30 +19,68 @@ export async function completeSprintAdvanced(
 
   if (sprintError) return { error: "Nie udało się zakończyć sprintu: " + sprintError.message }
 
-  // 2. Pobieramy wszystkie niedokończone zadania z tego sprintu
+  // Pobieramy ZAKOŃCZONE zadania z tego sprintu (tylko te, które mają przypisaną osobę)
+  const { data: completedTasks } = await supabase
+    .from('tasks')
+    .select('id, assignee_id, specialization') // Dodaj tu 'story_points' jeśli masz wagę zadania
+    .eq('sprint_id', sprintId)
+    .eq('status', 'done')
+    .not('assignee_id', 'is', null)
+
+  if (completedTasks && completedTasks.length > 0) {
+    // Przechodzimy przez każde ukończone zadanie
+    for (const task of completedTasks) {
+      // Jeśli wdrożyłeś wagi zadań, użyj task.story_points, w przeciwnym razie np. 50 EXP
+      const expToAdd = 20 
+      const spec = task.specialization || 'Ogólne'
+      const userId = task.assignee_id
+
+      // Sprawdzamy, czy użytkownik ma już rekord w user_exp dla tej specjalizacji
+      const { data: existingExp } = await supabase
+        .from('user_exp')
+        .select('exp')
+        .eq('user_id', userId)
+        .eq('specialization', spec)
+        .single()
+
+      if (existingExp) {
+        // ZWIĘKSZAMY OBECNY EXP
+        await supabase
+          .from('user_exp')
+          .update({ exp: existingExp.exp + expToAdd })
+          .eq('user_id', userId)
+          .eq('specialization', spec)
+      } else {
+        // TWORZYMY NOWY REKORD DLA TEJ SPECJALIZACJI
+        await supabase
+          .from('user_exp')
+          .insert({ 
+            user_id: userId, 
+            specialization: spec, 
+            exp: expToAdd 
+          })
+      }
+    }
+  }
+
   const { data: incompleteTasks } = await supabase
     .from('tasks')
     .select('id')
     .eq('sprint_id', sprintId)
     .neq('status', 'done')
 
-  // 3. Obsługa niedokończonych zadań
   if (incompleteTasks && incompleteTasks.length > 0) {
     const taskIds = incompleteTasks.map(t => t.id)
 
     if (incompleteAction === 'backlog') {
-      // Opcja A: Wyrzucamy do backlogu (sprint_id = null)
+      // Wyrzucamy do backlogu
       await supabase.from('tasks').update({ sprint_id: null }).in('id', taskIds)
       
     } else if (incompleteAction === 'new_sprint' && newSprintName) {
-      // Opcja B: Tworzymy nowy sprint i przenosimy tam zadania
+      // Tworzymy nowy sprint
       const { data: newSprint, error: newSprintError } = await supabase
         .from('sprints')
-        .insert({ 
-          project_id: projectId, 
-          name: newSprintName, 
-          status: 'active' 
-        })
+        .insert({ project_id: projectId, name: newSprintName, status: 'active' })
         .select('id')
         .single()
 
@@ -53,6 +91,7 @@ export async function completeSprintAdvanced(
     }
   }
 
+  // Odświeżamy interfejs
   revalidatePath(`/dashboard/projects/${projectId}`)
   return { success: true }
 }
