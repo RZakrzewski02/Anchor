@@ -1,37 +1,40 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, User, ChevronLeft } from 'lucide-react'
-import { sendMessage } from './friends-actions'
+import { Send, User, ChevronLeft, UserX, AlertTriangle, X, Loader2 } from 'lucide-react'
+import { sendMessage, removeFriend } from './friends-actions' // Upewnij się, że masz removeFriend w akcjach
 import { usePresence } from './presence-provider'
-import { createClient } from '@/lib/supabase/client' // Używamy klienta przeglądarkowego
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function ChatWindow({ 
-  messages: initialMessages, // Rename dla czytelności
+  messages: initialMessages,
   currentUserId, 
   friendId, 
   friendName,
   friendAvatar
 }: any) {
-  // 1. Zarządzanie stanem wiadomości lokalnie dla natychmiastowych aktualizacji
   const [chatMessages, setChatMessages] = useState(initialMessages)
   const [inputValue, setInputValue] = useState('')
+  
+  // Stany do usuwania znajomego
+  const [showRemoveModal, setShowRemoveModal] = useState(false)
+  const [isRemoving, setIsRemoving] = useState(false)
+  
   const bottomRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
+  const router = useRouter()
   
   const { isUserOnline } = usePresence()
   const isOnline = isUserOnline(friendId)
 
-  // Synchronizacja stanu, gdy zmienia się rozmówca lub przychodzą nowe dane z serwera
   useEffect(() => {
     setChatMessages(initialMessages)
   }, [initialMessages, friendId])
 
-  // 2. SUBSKRYPCJA REALTIME
+  // SUBSKRYPCJA REALTIME
   useEffect(() => {
-    console.log("Inicjalizacja subskrypcji dla:", friendId); // DEBUG
-
     const channel = supabase
       .channel(`chat_${friendId}`)
       .on(
@@ -39,13 +42,10 @@ export default function ChatWindow({
         {
           event: 'INSERT',
           table: 'direct_messages',
-          // USUNIĘTO FILTR STĄD - filtrujemy niżej w kodzie
         },
         (payload: any) => {
           const newMsg = payload.new;
-          console.log("Otrzymano nową wiadomość przez Realtime:", newMsg); // DEBUG
 
-          // Filtrowanie ręczne - sprawdzamy czy wiadomość dotyczy tej rozmowy
           const isFromThisChat = 
             (newMsg.sender_id === friendId && newMsg.receiver_id === currentUserId) ||
             (newMsg.sender_id === currentUserId && newMsg.receiver_id === friendId);
@@ -56,16 +56,13 @@ export default function ChatWindow({
               return [...prev, newMsg];
             });
 
-            // Automatyczne oznaczanie jako przeczytane
             if (newMsg.receiver_id === currentUserId) {
               supabase.from('direct_messages').update({ is_read: true }).eq('id', newMsg.id).then();
             }
           }
         }
       )
-      .subscribe((status) => {
-        console.log("Status subskrypcji:", status); // DEBUG: Powinno być 'SUBSCRIBED'
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
@@ -93,42 +90,79 @@ export default function ChatWindow({
     const content = inputValue
     setInputValue('')
     
-    // Optymistycznie nie dodajemy tutaj wiadomości do stanu, 
-    // bo Realtime ją "złapie" i wyświetli automatycznie po zapisie w DB.
     await sendMessage(friendId, content)
   }
 
-  return (
-    <div className="flex flex-col h-full bg-slate-50">
-      {/* Nagłówek czatu */}
-      <div className="p-3 border-b border-slate-200 flex items-center gap-2 md:gap-3 bg-white shadow-sm z-10 shrink-0">
-        <Link 
-          href="/dashboard/friends" 
-          className="text-slate-500 hover:bg-slate-100 rounded-full transition-colors md:hidden"
-        >
-          <ChevronLeft size={24} />
-        </Link>
+  // Funkcja usuwająca znajomego
+  const handleRemoveFriend = async () => {
+    setIsRemoving(true)
+    const result = await removeFriend(friendId) // Wywołanie akcji serwerowej
+    setIsRemoving(false)
+    
+    if (result?.error) {
+      alert("Błąd: " + result.error)
+    } else {
+      setShowRemoveModal(false)
+      // Po usunięciu wracamy na ogólną listę znajomych
+      router.push('/dashboard/friends')
+      router.refresh()
+    }
+  }
 
-        <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-100 bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
-          {friendAvatar ? (
-            <img src={friendAvatar} className="w-full h-full object-cover" alt={friendName} />
-          ) : (
-            <User size={16} />
-          )}
-        </div>
+  return (
+    <div className="flex flex-col h-full bg-slate-50 relative">
+      
+      {/* NAGŁÓWEK CZATU */}
+      <div className="p-3 border-b border-slate-200 flex items-center justify-between bg-white shadow-sm z-10 shrink-0">
         
-        <div className="min-w-0">
-          <h2 className="font-bold text-slate-900 text-sm truncate">{friendName}</h2>
-          <div className="flex items-center gap-1.5">
-             <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${isOnline ? 'bg-green-500' : 'bg-slate-300'}`}></span>
-             <span className="text-[10px] text-slate-500">
-               {isOnline ? 'Dostępny' : 'Niedostępny'}
-             </span>
+        {/* Lewa strona: Powrót, Awatar, Nazwa */}
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          <Link 
+            href="/dashboard/friends" 
+            className="text-slate-500 hover:bg-slate-100 p-1.5 rounded-full transition-colors md:hidden"
+          >
+            <ChevronLeft size={24} />
+          </Link>
+
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-100 bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+            {friendAvatar ? (
+              <img src={friendAvatar} className="w-full h-full object-cover" alt={friendName} />
+            ) : (
+              <User size={16} />
+            )}
           </div>
+          
+          <div className="min-w-0">
+            <h2 className="font-bold text-slate-900 text-sm truncate">{friendName}</h2>
+            <div className="flex items-center gap-1.5">
+               <span className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${isOnline ? 'bg-green-500' : 'bg-slate-300'}`}></span>
+               <span className="text-[10px] text-slate-500 font-medium tracking-wide uppercase">
+                 {isOnline ? 'Dostępny' : 'Niedostępny'}
+               </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Prawa strona: Akcje (Profil i Usunięcie) */}
+        <div className="flex items-center gap-1 shrink-0 ml-4">
+          <Link 
+            href={`/dashboard/users/${friendId}`}
+            title="Profil użytkownika"
+            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors cursor-pointer"
+          >
+            <User size={18} />
+          </Link>
+          <button 
+            onClick={() => setShowRemoveModal(true)}
+            title="Usuń ze znajomych"
+            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors cursor-pointer"
+          >
+            <UserX size={18} />
+          </button>
         </div>
       </div>
 
-      {/* Lista wiadomości */}
+      {/* LISTA WIADOMOŚCI */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar bg-white/50">
         {chatMessages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs italic">
@@ -160,7 +194,7 @@ export default function ChatWindow({
         <div ref={bottomRef} />
       </div>
 
-      {/* Pole wpisywania */}
+      {/* POLE WPISYWANIA */}
       <div className="p-3 bg-white border-t border-slate-200 shrink-0 pb-safe">
         <form onSubmit={handleSend} className="flex gap-2 items-end">
           <textarea 
@@ -185,6 +219,53 @@ export default function ChatWindow({
           </button>
         </form>
       </div>
+
+      {/* MODAL USUWANIA ZNAJOMEGO */}
+      {showRemoveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 relative overflow-hidden text-slate-900">
+            
+            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-red-50/50">
+              <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
+                <AlertTriangle className="text-red-500" size={20} /> Usuń znajomego
+              </h3>
+              <button 
+                onClick={() => setShowRemoveModal(false)} 
+                className="text-slate-400 hover:text-slate-700 p-2 rounded-full hover:bg-white transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                Czy na pewno chcesz usunąć użytkownika <span className="font-bold text-slate-900">{friendName}</span> ze swojej listy znajomych? <br/><br/>
+                Stracisz możliwość bezpośredniego wysyłania do niego wiadomości. Twoja historia czatu pozostanie zachowana w bazie.
+              </p>
+
+              <div className="flex gap-3 pt-2 mt-2 border-t border-slate-100">
+                <button 
+                  type="button" 
+                  onClick={() => setShowRemoveModal(false)} 
+                  className="flex-1 bg-white border border-slate-300 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Anuluj
+                </button>
+                <button 
+                  onClick={handleRemoveFriend}
+                  disabled={isRemoving} 
+                  className="flex-2 bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-700 transition-all shadow-md flex justify-center items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isRemoving ? <Loader2 size={18} className="animate-spin" /> : <UserX size={18} />}
+                  {isRemoving ? 'Usuwanie...' : 'Tak, usuń znajomego'}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

@@ -31,25 +31,33 @@ export default async function SprintPage({ params }: { params: Promise<{ id: str
   })) || []
 
   return (
-    <div className="p-8 bg-slate-50 min-h-screen text-slate-900">
-      <header className="mb-8">
-        <Link href={`/dashboard/projects/${id}`} className="text-slate-500 hover:text-slate-800 flex items-center gap-1 text-sm mb-4 transition-colors">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      
+      {/* NOWY NAGŁÓWEK: Biały, responsywny i przyklejony (sticky) */}
+      <div className="bg-white border-b border-slate-200 px-4 py-5 md:px-8 md:py-6 pt-16 md:pt-6 relative lg:sticky lg:top-0 z-40 shadow-sm">
+        
+        {/* ZMIANA: inline-flex i w-fit zapobiega rozciąganiu przycisku na telefonach */}
+        <Link 
+          href={`/dashboard/projects/${id}`} 
+          className="inline-flex items-center gap-1 w-fit text-slate-500 hover:text-blue-600 text-sm font-bold mb-4 transition-colors py-1 pr-2 -ml-1 rounded-lg hover:bg-slate-50"
+        >
           <ChevronLeft size={16} /> Powrót do projektu
         </Link>
+        
         <div className="flex justify-between items-end">
           <div>
-            <h1 className="text-3xl font-bold">{sprint.name}</h1>
-            <p className="text-slate-500">Zarządzanie zadaniami i harmonogramem cyklu</p>
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 leading-tight">{sprint.name}</h1>
+            <p className="text-slate-500 text-sm md:text-base mt-1">Zarządzanie zadaniami i harmonogramem cyklu</p>
           </div>
         </div>
-      </header>
+      </div>
 
-      <div className="space-y-12">
+      {/* GŁÓWNA ZAWARTOŚĆ: Tablica i Roadmapa */}
+      <div className="p-4 md:p-8 space-y-12">
         <section>
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
             <LayoutPanelLeft className="text-blue-600" size={20} /> Tablica Kanban
           </h2>
-          {/* ZMIANA: Przekazujemy allMembers do tablicy Kanban */}
           <KanbanBoard tasks={tasks || []} projectId={id} members={allMembers} />
         </section>
 
@@ -60,6 +68,7 @@ export default async function SprintPage({ params }: { params: Promise<{ id: str
           <Roadmap tasks={tasks || []} />
         </section>
       </div>
+
     </div>
   )
 }
