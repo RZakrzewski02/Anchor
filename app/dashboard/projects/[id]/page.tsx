@@ -10,6 +10,7 @@ import CreateSprintButton from './create-sprint-button'
 import CompleteSprintButton from './sprint/[sprintId]/complete-button'
 import CompleteProjectButton from './complete-project-button'
 import WorkloadChart from './workload-chart'
+import GithubActivityFeed from './github-feed'
 
 import { 
   Layers, 
@@ -21,6 +22,7 @@ import {
   History,
   FolderKanban,
   CheckCircle2,
+  Github,
 } from 'lucide-react'
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -31,7 +33,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   if (!user) redirect('/login')
 
   // POBIERAMY DANE PROJEKTU (dodano status do select)
-  const { data: project } = await supabase.from('projects').select('id, name, status').eq('id', id).single()
+  const { data: project } = await supabase.from('projects').select('id, name, status, github_repo, github_token').eq('id', id).single()
   if (!project) notFound()
 
   const { data: currentMember } = await supabase.from('project_members').select('role').eq('project_id', id).eq('user_id', user.id).single()
@@ -84,6 +86,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const sprintTasks = tasks?.filter(t => t.sprint_id === activeSprint?.id && t.sprint_id !== null) || []
   const backlogTasks = tasks?.filter(t => !t.sprint_id) || []
   const completedTasks = tasks?.filter(t => t.status === 'done') || []
+  const repoData = project.github_repo ? project.github_repo.split('/') : null;
+  
 
   return (
     <div className="flex flex-col h-full font-sans bg-white text-slate-900">
@@ -112,6 +116,22 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
       <div className="flex flex-col lg:flex-row flex-1 ">
         <main className="flex-1 flex flex-col border-r border-slate-200">
+
+          {/* --- GitHub Feed ---*/}
+          <div className="lg:col-span-1 ">
+            {repoData && repoData.length === 2 ? (
+              <GithubActivityFeed owner={repoData[0]} repo={repoData[1]} token={project.github_token} />
+            ) : (
+              <div className="p-6 bg-slate-50 border border-slate-200 border-dashed rounded-2xl text-center text-slate-500 flex flex-col items-center justify-center h-full min-h-50">
+                <Github size={32} className="opacity-40 mb-3" />
+                <p className="text-sm font-bold text-slate-700">Brak repozytorium</p>
+                <p className="text-xs mt-1">
+                  Kliknij edytuj projekt i dodaj ścieżkę do repozytorium GitHub, aby śledzić aktywność zespołu.
+                </p>
+              </div>
+            )}
+          </div>
+          <hr className="border-slate-200" />
           
           {/* --- Sekcja Aktywnego Sprintu --- */}
           <div className="p-8 border-b border-slate-200 bg-white ">
@@ -162,6 +182,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
+          {/* --- Wykres ---*/}
           <div className="p-4 md:p-8 border-t border-slate-200 bg-white">
             <div className="p-4 md:px-8">
               <WorkloadChart members={allMembers} />

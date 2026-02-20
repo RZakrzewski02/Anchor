@@ -3,7 +3,7 @@
 // 1. Importujemy useEffect oraz createPortal
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Edit2, X, Loader2, FolderKanban } from 'lucide-react'
+import { Edit2, X, Loader2, FolderKanban, Github } from 'lucide-react'
 import { updateProject } from './actions'
 
 export default function EditProjectButton({ project }: { project: any }) {
@@ -99,6 +99,39 @@ export default function EditProjectButton({ project }: { project: any }) {
                 />
               </div>
 
+              {/* GitHub */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Github size={14} /> Repozytorium GitHub
+                </label>
+                <input 
+                  name="githubRepo" 
+                  defaultValue={project.github_repo || ''}
+                  placeholder="np. facebook/react" 
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+                />
+                <p className="text-[10px] text-slate-400 font-medium mt-1">
+                  Podaj w formacie: właściciel/nazwa-repozytorium
+                </p>
+              </div>
+
+              <div className="space-y-1.5 mt-4">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                  <span>Token dostępu (GitHub PAT)</span>
+                  <span className="text-[10px] text-amber-500 bg-amber-50 px-2 py-0.5 rounded uppercase">Tylko prywatne</span>
+                </label>
+                <input 
+                  type="password"
+                  name="githubToken" 
+                  defaultValue={project.github_token || ''}
+                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" 
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-sm" 
+                />
+                <p className="text-[10px] text-slate-400 font-medium mt-1 leading-tight">
+                  Wymagane tylko dla prywatnych repozytoriów. Wygeneruj token (Classic) na GitHubie z uprawnieniem <strong>"repo"</strong>.
+                </p>
+              </div>
+
               {/* Przyciski */}
               <div className="flex gap-3 pt-2 mt-2 border-t border-slate-100">
                 <button 
@@ -120,7 +153,7 @@ export default function EditProjectButton({ project }: { project: any }) {
             </form>
           </div>
         </div>,
-        document.body // <-- Cel Portalu
+        document.body
       )}
     </>
   )

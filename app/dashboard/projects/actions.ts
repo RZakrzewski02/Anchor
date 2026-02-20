@@ -52,10 +52,12 @@ export async function updateProject(projectId: string, formData: FormData) {
   
   const name = formData.get('name') as string
   const description = formData.get('description') as string
+  const githubRepo = formData.get('githubRepo') as string
+  const githubToken = formData.get('githubToken') as string
 
   const { error } = await supabase
     .from('projects')
-    .update({ name, description })
+    .update({ name, description, github_repo: githubRepo, github_token: githubToken})
     .eq('id', projectId)
 
   if (error) {
