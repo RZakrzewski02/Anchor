@@ -6,7 +6,6 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
   const { id } = await params
   const supabase = await createClient()
 
-  // 1. Pobieramy dane profilu wybranego użytkownika
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
@@ -15,20 +14,17 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
 
   if (!profile) notFound()
 
-  // 2. Pobieramy statystyki EXP dla tego użytkownika
   const { data: experience } = await supabase
     .from('user_exp')
     .select('specialization, exp')
     .eq('user_id', id)
 
-  // 3. NOWE: Pobieramy ilość ukończonych zadań tego użytkownika
   const { count: tasksCount } = await supabase
     .from('tasks')
     .select('*', { count: 'exact', head: true })
     .eq('assignee_id', id)
     .eq('status', 'done')
 
-  // 4. NOWE: Pobieramy ilość zakończonych projektów tego użytkownika
   const { data: memberProjects } = await supabase
     .from('project_members')
     .select('projects!inner(status)')
@@ -37,7 +33,6 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
 
   const projectsCount = memberProjects?.length || 0
 
-  // Definiujemy specjalizacje do wyświetlenia
   const specs = [
     { id: 'frontend', label: 'Frontend' },
     { id: 'backend', label: 'Backend' },
@@ -50,10 +45,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
       
       {/* KARTA PROFILU */}
       <div className="bg-white border border-slate-200 rounded-3xl p-10 shadow-sm flex flex-col items-center relative overflow-hidden">
-        {/* Dekoracyjny baner w tle */}
         <div className="absolute top-0 left-0 w-full h-24 bg-slate-50 border-b border-slate-100" />
-        
-        {/* Zdjęcie profilowe */}
         <div className="relative z-10 w-32 h-32 rounded-full border-4 border-white bg-white shadow-md overflow-hidden flex items-center justify-center">
           {profile.avatar_url ? (
             <img src={profile.avatar_url} className="w-full h-full object-cover" alt="Avatar" />
@@ -61,8 +53,6 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
             <UserIcon size={48} className="text-slate-200" />
           )}
         </div>
-
-        {/* Dane podstawowe: Imię, Nazwisko i E-mail */}
         <div className="mt-6 text-center z-10">
           <h2 className="text-2xl font-black text-slate-900 leading-tight">
             {profile.first_name} {profile.last_name}
@@ -74,7 +64,6 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      {/* NOWA SEKCJA: OGÓLNE STATYSTYKI */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm flex flex-col items-center justify-center gap-2 hover:border-blue-300 transition-colors">
           <CheckCircle2 className="text-blue-500" size={28} />
@@ -101,7 +90,6 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {specs.map((spec) => {
-            // Logika obliczania poziomu (100 EXP = 1 LVL)
             const stats = experience?.find(e => e.specialization === spec.id)
             const exp = stats?.exp || 0
             const level = Math.floor(exp / 100)
@@ -121,7 +109,6 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
                   </div>
                 </div>
 
-                {/* Pasek postępu do następnego poziomu */}
                 <div className="space-y-2">
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div 

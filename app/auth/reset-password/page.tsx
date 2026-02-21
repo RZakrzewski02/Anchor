@@ -11,7 +11,6 @@ export default async function ResetPasswordPage({
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 font-sans">
       <div className="max-w-md w-full">
-        {/* Nagłówek */}
         <div className="flex flex-col items-center mb-8 text-center">
           <div className="bg-blue-600 p-3 rounded-xl mb-4 shadow-lg shadow-blue-200">
             <Anchor className="text-white" size={32} />
@@ -20,7 +19,6 @@ export default async function ResetPasswordPage({
           <p className="text-slate-500 mt-2 font-medium">Wprowadź nowe, bezpieczne hasło dla swojego konta.</p>
         </div>
 
-        {/* Formularz */}
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
           <form action={updatePassword} className="flex flex-col gap-5">
             {params.error && (

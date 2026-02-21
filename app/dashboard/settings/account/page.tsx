@@ -9,7 +9,6 @@ export default async function AccountPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
   
-  // Pobieramy aktualne dane, aby wypełnić formularz
   const { data: profile } = await supabase
     .from('profiles')
     .select('first_name, last_name')
@@ -27,7 +26,7 @@ export default async function AccountPage() {
         <p className="text-slate-500 text-sm">Zarządzaj swoimi danymi i bezpieczeństwem.</p>
       </div>
 
-      {/* SEKCJA: DANE OSOBOWE */}
+      {/* DANE OSOBOWE */}
       <section className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
         <h2 className="text-lg font-bold text-slate-900 mb-6">Dane osobowe</h2>
         <AccountForm 
@@ -40,11 +39,11 @@ export default async function AccountPage() {
         <h2 className="text-lg font-bold text-slate-900 mb-6">Połączone konta</h2>
         <GithubConnect 
           isConnected={isGithubConnected} 
-          identity={githubIdentity} // ZMIANA: Przekazujemy cały obiekt "githubIdentity"
+          identity={githubIdentity}
         />
       </section>
 
-      {/* SEKCJA: BEZPIECZEŃSTWO */}
+      {/* BEZPIECZEŃSTWO */}
       <section className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
         <h2 className="text-lg font-bold text-slate-900 mb-6">Zmiana hasła</h2>
         <PasswordForm />

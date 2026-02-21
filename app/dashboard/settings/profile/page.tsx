@@ -8,27 +8,23 @@ export default async function ProfilePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // 1. Pobieramy dane profilu
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single()
 
-  // 2. Pobieramy dane o doświadczeniu (EXP)
   const { data: experience } = await supabase
     .from('user_exp')
     .select('specialization, exp')
     .eq('user_id', user.id)
 
-  // 3. NOWE: Pobieramy ilość ukończonych zadań (status = 'done')
   const { count: tasksCount } = await supabase
     .from('tasks')
     .select('*', { count: 'exact', head: true })
     .eq('assignee_id', user.id)
     .eq('status', 'done')
 
-  // 4. NOWE: Pobieramy ilość zakończonych projektów
   const { data: memberProjects } = await supabase
     .from('project_members')
     .select('projects!inner(status)')
@@ -37,7 +33,6 @@ export default async function ProfilePage() {
 
   const projectsCount = memberProjects?.length || 0
 
-  // Definiujemy specjalizacje
   const specs = [
     { id: 'frontend', label: 'Frontend' },
     { id: 'backend', label: 'Backend' },
@@ -56,7 +51,7 @@ export default async function ProfilePage() {
         <p className="text-slate-500 text-sm">Twoje osiągnięcia i poziom doświadczenia w zespole.</p>
       </div>
 
-      {/* KARTA GŁÓWNA: AVATAR I DANE */}
+      {/* AVATAR I DANE */}
       <div className="bg-white border border-slate-200 rounded-3xl p-10 shadow-sm flex flex-col items-center relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-24 bg-slate-50 border-b border-slate-100" />
         
@@ -75,7 +70,7 @@ export default async function ProfilePage() {
         </div>
       </div>
 
-      {/* NOWA SEKCJA: OGÓLNE STATYSTYKI */}
+      {/* OGÓLNE STATYSTYKI */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center shadow-sm flex flex-col items-center justify-center gap-2 hover:border-blue-300 transition-colors">
           <CheckCircle2 className="text-blue-500" size={28} />
@@ -93,7 +88,7 @@ export default async function ProfilePage() {
         </div>
       </div>
 
-      {/* SEKCJA POZIOMÓW (SYSTEM PUNKTOWY) */}
+      {/* SEKCJA POZIOMÓW*/}
       <div className="space-y-6">
         <div className="flex items-center gap-2 px-2">
           <Star className="text-blue-500 fill-blue-500" size={18} />

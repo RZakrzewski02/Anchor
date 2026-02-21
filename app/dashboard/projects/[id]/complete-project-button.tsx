@@ -10,7 +10,6 @@ export default function CompleteProjectButton({ projectId }: { projectId: string
   const [isLoading, setIsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  // Upewniamy się, że portal wyrenderuje się tylko po stronie klienta
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -61,7 +60,7 @@ export default function CompleteProjectButton({ projectId }: { projectId: string
         Zakończ projekt
       </button>
 
-      {/* MODAL (Renderowany przez Portal) */}
+      {/* MODAL */}
       {isOpen && mounted && createPortal(
         <div 
           onClick={handleClose}
@@ -71,7 +70,6 @@ export default function CompleteProjectButton({ projectId }: { projectId: string
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 relative overflow-hidden text-slate-900"
           >
-            {/* Nagłówek modala - zielony akcent */}
             <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-emerald-50/50">
               <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
                 <CheckCircle2 className="text-emerald-600" size={20} /> Zakończ projekt
@@ -85,7 +83,6 @@ export default function CompleteProjectButton({ projectId }: { projectId: string
               </button>
             </div>
 
-            {/* Ciało modala */}
             <div className="p-6">
               <p className="text-sm text-slate-600 mb-6 leading-relaxed">
                 Czy na pewno chcesz zakończyć ten projekt?

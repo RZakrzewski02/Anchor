@@ -6,30 +6,27 @@ import { revalidatePath } from 'next/cache'
 export async function createProject(formData: FormData) {
   const supabase = await createClient()
 
-  // 1. Sprawdź usera
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Nie jesteś zalogowany' }
 
   const name = formData.get('name') as string
   const description = formData.get('description') as string
 
-  // 2. Utwórz projekt
   const { data: project, error: projectError } = await supabase
     .from('projects')
     .insert({
       name,
       description,
-      created_by: user.id // Dla pewności przesyłamy ID twórcy
+      created_by: user.id 
     })
     .select()
     .single()
 
   if (projectError) {
     console.error('Błąd tworzenia projektu:', projectError)
-    return { error: projectError.message } // Zwracamy dokładny komunikat błędu
+    return { error: projectError.message }
   }
 
-  // 3. Dodaj twórcę jako managera
   const { error: memberError } = await supabase
     .from('project_members')
     .insert({

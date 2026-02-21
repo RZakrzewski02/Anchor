@@ -11,21 +11,17 @@ export default function GithubFeedClient({ events, userMap }: { events: any[], u
     return <p className="text-sm text-slate-500">Brak niedawnej aktywności w tym repozytorium.</p>
   }
 
-  // Obliczamy ile mamy stron
   const totalPages = Math.ceil(events.length / itemsPerPage)
-  
-  // Wycinamy tylko 5 elementów dla aktualnej strony
   const currentEvents = events.slice(page * itemsPerPage, (page + 1) * itemsPerPage)
 
   return (
     <div>
-      <div className="space-y-1 min-h-70"> {/* min-h zapobiega skakaniu wysokości komponentu */}
+      <div className="space-y-1 min-h-70">
         {currentEvents.map((event) => (
           <EventItem key={event.id} event={event} userMap={userMap} />
         ))}
       </div>
 
-      {/* Nawigacja strzałkami (Paginacja) */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
           <button
@@ -53,7 +49,6 @@ export default function GithubFeedClient({ events, userMap }: { events: any[], u
   )
 }
 
-// Przeniesiony EventItem (dokładnie ten sam kod co wcześniej)
 function EventItem({ event, userMap }: { event: any, userMap: any }) {
   const githubUsername = event.actor.display_login
   const appUser = userMap[githubUsername]

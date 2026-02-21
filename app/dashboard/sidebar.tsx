@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation'
 import { Anchor, LayoutDashboard, FolderKanban, Settings, LogOut, Menu, X, User, Bell, Users } from 'lucide-react'
 import { signOut } from './actions'
 
-// Definicja typu profilu zgodna z tym, co zwraca Supabase
 type UserProfile = {
   first_name?: string | null
   last_name?: string | null
@@ -18,7 +17,7 @@ type UserProfile = {
 type SidebarProps = {
   userEmail: string | undefined
   userProfile: UserProfile
-  unreadCount: number // NOWE: Liczba nieprzeczytanych powiadomień
+  unreadCount: number
 }
 
 export default function Sidebar({ userEmail, userProfile, unreadCount }: SidebarProps) {
@@ -35,12 +34,10 @@ export default function Sidebar({ userEmail, userProfile, unreadCount }: Sidebar
     { href: '/dashboard/settings', label: 'Ustawienia', icon: Settings },
   ]
 
-  // LOGIKA WYŚWIETLANIA NAZWY:
   const displayName = userProfile?.full_name || 
     (userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name || ''}`.trim() : null) || 
     userEmail?.split('@')[0] || 'Użytkownik'
 
-  // LOGIKA AWATARA:
   const avatarUrl = userProfile?.avatar_url
 
   return (
@@ -97,8 +94,6 @@ export default function Sidebar({ userEmail, userProfile, unreadCount }: Sidebar
             >
               <div className="relative">
                 <item.icon size={18} className={isActive(item.href) ? 'text-white' : 'group-hover:text-blue-400'} /> 
-                
-                {/* NOWE: Wyświetlanie badge'a z liczbą powiadomień */}
                 {item.badge ? (
                   <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold w-3.5 h-3.5 flex items-center justify-center rounded-full border border-slate-900">
                     {item.badge > 9 ? '9+' : item.badge}
@@ -119,7 +114,7 @@ export default function Sidebar({ userEmail, userProfile, unreadCount }: Sidebar
             className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800 transition-colors group cursor-pointer"
             onClick={() => setIsOpen(false)}
           >
-            {/* AVATAR - POPRAWIONY NA IKONKĘ LUDKA */}
+            {/* AVATAR */}
             <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 overflow-hidden group-hover:border-blue-500 transition-colors">
               {avatarUrl ? (
                 <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />

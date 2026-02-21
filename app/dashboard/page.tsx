@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { 
   CheckCircle2, 
   ChevronRight, 
-  ChevronLeft, // Dodano import strzałki w lewo
+  ChevronLeft,
   Briefcase,
   ListTodo,
   FolderKanban,
@@ -12,7 +12,6 @@ import {
   AlertCircle
 } from 'lucide-react'
 
-// Definicja propsów dla Server Component (Next.js 15 traktuje searchParams jako Promise)
 export default async function DashboardPage(props: {
   searchParams: Promise<{ month?: string; year?: string }>
 }) {
@@ -21,32 +20,25 @@ export default async function DashboardPage(props: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // --- 1. LOGIKA DATY (KALENDARZ) ---
   const now = new Date()
   
-  // Pobieramy rok i miesiąc z URL, a jak nie ma, to bierzemy aktualne
-  // Uwaga: w URL month=0 to Styczeń, month=11 to Grudzień (standard JS)
   const viewYear = searchParams.year ? parseInt(searchParams.year) : now.getFullYear()
   const viewMonth = searchParams.month ? parseInt(searchParams.month) : now.getMonth()
 
-  // Tworzymy obiekt daty dla widoku (pierwszy dzień wyświetlanego miesiąca)
   const currentViewDate = new Date(viewYear, viewMonth, 1)
-  
-  // Obliczamy daty dla przycisków "Poprzedni" i "Następny"
+
   const prevDate = new Date(viewYear, viewMonth - 1, 1)
   const nextDate = new Date(viewYear, viewMonth + 1, 1)
   
-  // Parametry do linków
+
   const prevLink = `/dashboard?month=${prevDate.getMonth()}&year=${prevDate.getFullYear()}`
   const nextLink = `/dashboard?month=${nextDate.getMonth()}&year=${nextDate.getFullYear()}`
-  const resetLink = `/dashboard` // Powrót do "dzisiaj"
+  const resetLink = `/dashboard`
 
-  // Zmienne pomocnicze do generowania siatki
   const currentYear = currentViewDate.getFullYear()
   const currentMonth = currentViewDate.getMonth()
   
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
-  // 0=Poniedziałek, 6=Niedziela (poprawka przesunięcia)
   const firstDayIndex = (new Date(currentYear, currentMonth, 1).getDay() || 7) - 1 
 
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1)
@@ -55,9 +47,6 @@ export default async function DashboardPage(props: {
   const monthName = currentViewDate.toLocaleString('pl-PL', { month: 'long', year: 'numeric' })
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1)
 
-  // --- 2. POBIERANIE DANYCH ---
-  
-  // Pobieramy projekty
   const { data: userProjects } = await supabase
     .from('project_members')
     .select(`
@@ -80,7 +69,6 @@ export default async function DashboardPage(props: {
     .select(`project_id, profiles (avatar_url, full_name, first_name)`)
     .in('project_id', projectIds)
 
-  // Pobieramy zadania (wszystkie aktywne, filtrowanie po dacie zrobimy w JS)
   const { data: myTasksRaw } = await supabase
     .from('tasks')
     .select(`*, projects (name, status)`)
@@ -93,10 +81,8 @@ export default async function DashboardPage(props: {
     return p && p.status !== 'completed';
   }) || []
 
-  // Statystyki ogólne (niezależne od wybranego miesiąca)
   const activeTasksCount = myTasks.length
-  
-  // Zadania bez daty
+
   const tasksNoDate = myTasks.filter((t: any) => !t.end_date)
 
   return (
@@ -119,7 +105,7 @@ export default async function DashboardPage(props: {
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-5">
-          <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+          <div className="w-14 h-14 bg-indigo-50 text-blue-600 rounded-2xl flex items-center justify-center">
             <Briefcase size={28} />
           </div>
           <div>
@@ -134,7 +120,6 @@ export default async function DashboardPage(props: {
         {/* LEWA KOLUMNA: KALENDARZ */}
         <div className="xl:col-span-2 space-y-5">
           
-          {/* NAGŁÓWEK KALENDARZA Z NAWIGACJĄ */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 px-1">
             
             <div className="flex items-center gap-4 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
@@ -160,14 +145,12 @@ export default async function DashboardPage(props: {
               </Link>
             </div>
 
-            {/* Przycisk powrotu do "dzisiaj", jeśli nie oglądamy aktualnego miesiąca */}
             {(viewMonth !== now.getMonth() || viewYear !== now.getFullYear()) && (
                <Link href={resetLink} className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">
                  Wróć do dzisiaj
                </Link>
             )}
             
-            {/* Wyświetlanie aktualnej daty jako info */}
             {viewMonth === now.getMonth() && viewYear === now.getFullYear() && (
                <div className="text-xs font-bold text-slate-400 uppercase tracking-wide bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">
                  Dzisiaj: {now.toLocaleDateString('pl-PL')}
@@ -176,7 +159,6 @@ export default async function DashboardPage(props: {
           </div>
           
           <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm p-4 md:p-6">
-            {/* Nagłówki dni tygodnia */}
             <div className="grid grid-cols-7 mb-4 text-center">
               {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map(day => (
                 <div key={day} className="text-xs font-bold text-slate-400 uppercase tracking-widest py-2">
@@ -185,28 +167,22 @@ export default async function DashboardPage(props: {
               ))}
             </div>
 
-            {/* Siatka kalendarza */}
             <div className="grid grid-cols-7 gap-2">
-              {/* Puste sloty */}
               {emptySlots.map(slot => <div key={`empty-${slot}`} className="min-h-25 bg-slate-50/20 rounded-xl" />)}
-
-              {/* Dni miesiąca */}
               {daysArray.map(day => {
-                // Filtrujemy zadania dla konkretnego dnia w WYŚWIETLANYM miesiącu
                 const dayTasks = myTasks.filter((t: any) => {
                   if (!t.end_date) return false
                   const d = new Date(t.end_date)
                   return d.getDate() === day && d.getMonth() === currentMonth && d.getFullYear() === currentYear
                 })
 
-                // Sprawdzamy czy to "dzisiaj" (tylko jeśli wyświetlany miesiąc to aktualny miesiąc)
                 const isToday = day === now.getDate() && currentMonth === now.getMonth() && currentYear === now.getFullYear()
 
                 return (
                   <div 
                     key={day} 
                     className={`min-h-25 border rounded-xl p-2 flex flex-col gap-1 transition-all ${
-                      isToday ? 'border-blue-500 bg-blue-50/30 ring-1 ring-blue-500 ring-offset-2' : 'border-slate-100 bg-slate-50/30 hover:bg-slate-50'
+                      isToday ? 'border-blue-500 bg-blue-50/30' : 'border-slate-100 bg-slate-50/30 hover:bg-slate-50'
                     }`}
                   >
                     <span className={`text-xs font-bold mb-1 ml-1 ${isToday ? 'text-blue-600' : 'text-slate-400'}`}>
@@ -238,21 +214,27 @@ export default async function DashboardPage(props: {
 
           {/* Sekcja zadań bez terminu */}
           {tasksNoDate.length > 0 && (
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-              <h3 className="text-sm font-bold text-slate-500 mb-3 flex items-center gap-2">
-                <AlertCircle size={16} /> Zadania bez terminu ({tasksNoDate.length})
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50/50 rounded-full -mr-16 -mt-16 pointer-events-none" />
+              
+              <h3 className="text-lg font-bold text-slate-800 mb-5 flex items-center gap-2 relative z-10">
+                <AlertCircle size={20} className="text-blue-500" /> Zadania bez terminu
               </h3>
-              <div className="flex flex-wrap gap-2">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10">
                 {tasksNoDate.map((t: any) => (
                   <Link 
                     key={t.id} 
                     href={`/dashboard/projects/${t.project_id}`}
-                    className="group flex flex-col bg-white border border-slate-200 px-3 py-1.5 rounded-lg hover:border-blue-400 hover:shadow-sm transition-all"
+                    className="group flex flex-col bg-white border border-slate-200 p-3.5 rounded-2xl hover:border-blue-400 hover:shadow-md transition-all h-full"
                   >
-                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
-                      {(t.projects as any)?.name}
-                    </span>
-                    <span className="text-xs font-bold text-slate-600 group-hover:text-blue-600">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <div/>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                        {(t.projects as any)?.name}
+                      </span>
+                    </div>
+                    <span className="text-sm font-bold text-slate-700 group-hover:text-blue-600 leading-snug">
                       {t.title}
                     </span>
                   </Link>
@@ -265,7 +247,7 @@ export default async function DashboardPage(props: {
         {/* PRAWA KOLUMNA: PROJEKTY */}
         <div className="space-y-5">
           <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800 px-1">
-            <FolderKanban size={22} className="text-indigo-600" /> Projekty
+            <FolderKanban size={22} className="text-blue-600" /> Projekty
           </h2>
           <div className="space-y-4">
             {projects.length > 0 ? (

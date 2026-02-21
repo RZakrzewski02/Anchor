@@ -110,19 +110,14 @@ function NotificationItem({ notification }: { notification: any }) {
       </div>
 
       <div className="flex items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-end">
-        
-        {/* LOGIKA PRZYCISKÓW AKCJI (ZAPROSZENIA) */}
         {isInvitation && !isRead ? (
           <div className="flex gap-2 w-full md:w-auto">
             
-            {/* PRZYCISK AKCEPTUJ */}
             <form className="flex-1 md:flex-none" action={async () => { 
                 'use server'; 
                 if (notification.type === 'invitation') {
-                    // Akceptacja projektu
                     await acceptInvitation(notification.id, notification.resource_id)
                 } else {
-                    // Akceptacja znajomego (resource_id tutaj to ID nadawcy!)
                     await acceptFriendRequestFromNotification(notification.resource_id, notification.id) 
                 }
             }}>
@@ -131,14 +126,11 @@ function NotificationItem({ notification }: { notification: any }) {
               </button>
             </form>
 
-            {/* PRZYCISK ODRZUĆ */}
             <form className="flex-1 md:flex-none" action={async () => { 
                 'use server'; 
                 if (notification.type === 'invitation') {
-                    // Odrzucenie projektu
                     await declineInvitation(notification.id, notification.resource_id)
                 } else {
-                    // Odrzucenie znajomego
                     await declineFriendRequestFromNotification(notification.resource_id, notification.id)
                 }
             }}>
@@ -148,14 +140,12 @@ function NotificationItem({ notification }: { notification: any }) {
             </form>
           </div>
         ) : (
-          // DLA POZOSTAŁYCH TYPÓW LUB PRZECZYTANYCH - LINK
           <Link href={linkHref} className="whitespace-nowrap px-4 py-2 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors ">
               Zobacz szczegóły
           </Link>
         )}
 
         <div className="flex items-center gap-1 border-l border-slate-100 pl-2 ml-2">
-          {/* Przycisk oznaczania jako przeczytane (dla innych typów niż zaproszenia) */}
           {!isRead && !isInvitation && (
             <form action={async () => { 'use server'; await markAsRead(notification.id) }}>
               <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer" title="Oznacz jako przeczytane">
@@ -164,7 +154,6 @@ function NotificationItem({ notification }: { notification: any }) {
             </form>
           )}
 
-          {/* Usuwanie */}
           <form action={async () => { 'use server'; await deleteNotification(notification.id) }}>
             <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Usuń powiadomienie">
               <Trash2 size={18} />

@@ -25,9 +25,6 @@ export async function createSprint(projectId: string, formData: FormData) {
 export async function completeSprint(projectId: string, sprintId: string) {
   const supabase = await createClient()
 
-  // --- NOWA LOGIKA SYSTEMU PUNKTOWEGO ---
-  
-  // 1. Pobierz zadania 'done', które mają przypisanego wykonawcę w tym sprincie
   const { data: completedTasks } = await supabase
     .from('tasks')
     .select('assignee_id, specialization')
@@ -35,10 +32,9 @@ export async function completeSprint(projectId: string, sprintId: string) {
     .eq('status', 'done')
     .not('assignee_id', 'is', null)
 
-  // 2. Przyznaj 20 EXP za każde ukończone zadanie
+
   if (completedTasks && completedTasks.length > 0) {
     for (const task of completedTasks) {
-      // Wywołujemy funkcję SQL (rpc), która obsłuży dodawanie punktów w bazie
       await supabase.rpc('add_user_exp', { 
         target_user_id: task.assignee_id, 
         target_spec: task.specialization, 
@@ -47,9 +43,6 @@ export async function completeSprint(projectId: string, sprintId: string) {
     }
   }
 
-  // --- KONIEC LOGIKI PUNKTOWEJ ---
-
-  // 3. Przenieś zadania, które NIE są 'done' z powrotem do backlogu
   const { error: tasksError } = await supabase
     .from('tasks')
     .update({ sprint_id: null })
@@ -58,7 +51,6 @@ export async function completeSprint(projectId: string, sprintId: string) {
 
   if (tasksError) return { error: tasksError.message }
 
-  // 4. Oznacz sprint jako zakończony
   const { error: sprintError } = await supabase
     .from('sprints')
     .update({ status: 'completed' })

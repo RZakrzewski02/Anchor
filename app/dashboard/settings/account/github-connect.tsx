@@ -20,7 +20,6 @@ export default function GithubConnect({
   const supabase = createClient()
   const router = useRouter()
 
-  // Upewniamy się, że portal wyrenderuje się tylko po stronie klienta
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -31,7 +30,6 @@ export default function GithubConnect({
       provider: 'github',
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=/dashboard/settings/account`,
-        // ZMIANA: Wymuszamy na GitHubie ponowne pokazanie okna autoryzacji
         queryParams: {
           prompt: 'consent',
         }
@@ -44,7 +42,6 @@ export default function GithubConnect({
     }
   }
 
-  // Funkcja tylko do otwierania modala
   const handleDisconnectClick = () => {
     setIsModalOpen(true)
   }
@@ -53,7 +50,6 @@ export default function GithubConnect({
     if (!loading) setIsModalOpen(false)
   }
 
-  // Właściwa logika odłączania (wywoływana z modala)
   const confirmDisconnect = async () => {
     if (!identity) return 
     
@@ -111,17 +107,15 @@ export default function GithubConnect({
         )}
       </div>
 
-      {/* MODAL (Renderowany przez Portal) */}
       {isModalOpen && mounted && createPortal(
         <div 
           onClick={closeModal}
           className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 cursor-default"
         >
           <div 
-            onClick={(e) => e.stopPropagation()} // Zapobiega zamknięciu przy kliknięciu wewnątrz okienka
+            onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 relative overflow-hidden text-slate-900"
           >
-            {/* Nagłówek modala - akcent ostrzegawczy (czerwony/różowy) */}
             <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-red-50/50">
               <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
                 <Unplug className="text-red-500" size={20} /> Odłącz konto
@@ -135,14 +129,12 @@ export default function GithubConnect({
               </button>
             </div>
 
-            {/* Ciało modala */}
             <div className="p-6">
               <p className="text-sm text-slate-600 mb-6 leading-relaxed">
                 Czy na pewno chcesz odłączyć swoje konto <strong>GitHub</strong>? <br/><br/>
                 Stracisz możliwość automatycznej integracji z repozytoriami, w tym śledzenia commitów i zamykania zadań. Tę operację zawsze możesz cofnąć, ponownie łącząc konta.
               </p>
 
-              {/* Przyciski */}
               <div className="flex gap-3 pt-2 mt-2 border-t border-slate-100">
                 <button 
                   type="button" 

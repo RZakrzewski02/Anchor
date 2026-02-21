@@ -8,14 +8,12 @@ export default async function ProjectsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Pobieramy projekty, do których należy użytkownik
   const { data: userProjects } = await supabase
     .from('project_members')
     .select(`project_id, projects (*)`)
     .eq('user_id', user?.id)
     .eq('status', 'active')
 
-  // Mapowanie i rozpakowanie danych z joinów (naprawa błędów any[])
   const projectList = userProjects?.map(p => {
     const proj = Array.isArray(p.projects) ? p.projects[0] : p.projects;
     return proj;
@@ -34,7 +32,7 @@ export default async function ProjectsPage() {
         <NewProjectButton />
       </header>
 
-      {/* SEKCI: AKTYWNE */}
+      {/* SEKCjA: AKTYWNE */}
       <section className="space-y-6">
         <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-2">
           <FolderKanban size={16} /> Aktywne ({activeProjects.length})
@@ -46,7 +44,7 @@ export default async function ProjectsPage() {
         </div>
       </section>
 
-      {/* SEKCI: ZAKOŃCZONE (ARCHIWUM) */}
+      {/* SEKCjA: ZAKOŃCZONE (ARCHIWUM) */}
       {completedProjects.length > 0 && (
         <section className="space-y-6 pt-10 border-t border-slate-200">
           <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-2">

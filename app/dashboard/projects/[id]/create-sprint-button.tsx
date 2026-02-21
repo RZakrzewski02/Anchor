@@ -24,7 +24,6 @@ export default function CreateSprintButton({ projectId }: { projectId: string })
 
   return (
     <>
-      {/* PRZYCISK OTWIERAJĄCY MODAL */}
       <button 
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors text-sm shadow-sm cursor-pointer"
@@ -37,8 +36,6 @@ export default function CreateSprintButton({ projectId }: { projectId: string })
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 relative overflow-hidden text-slate-900">
-            
-            {/* Nagłówek modala */}
             <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50">
               <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
                 <Layers className="text-blue-500" size={20} /> Nowy Sprint

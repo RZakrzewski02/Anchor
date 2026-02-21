@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-// 1. Aktualizacja Imienia i Nazwiska
 export async function updateName(formData: FormData) {
   const supabase = await createClient()
   const firstName = formData.get('firstName') as string
@@ -27,7 +26,6 @@ export async function updateName(formData: FormData) {
   return { success: 'Dane zostały zaktualizowane' }
 }
 
-// 2. Zmiana Hasła
 export async function updatePassword(formData: FormData) {
   const supabase = await createClient()
   const oldPassword = formData.get('oldPassword') as string
@@ -36,7 +34,6 @@ export async function updatePassword(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || !user.email) return { error: 'Błąd autoryzacji' }
 
-  // Supabase wymaga ponownego zalogowania, aby zweryfikować stare hasło
   const { error: signInError } = await supabase.auth.signInWithPassword({
     email: user.email,
     password: oldPassword,
@@ -44,7 +41,6 @@ export async function updatePassword(formData: FormData) {
 
   if (signInError) return { error: 'Stare hasło jest nieprawidłowe' }
 
-  // Jeśli stare hasło jest poprawne, ustawiamy nowe
   const { error: updateError } = await supabase.auth.updateUser({
     password: newPassword
   })

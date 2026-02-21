@@ -9,13 +9,11 @@ export default async function SprintPage({ params }: { params: Promise<{ id: str
   const { id, sprintId } = await params
   const supabase = await createClient()
 
-  // 1. Pobieranie sprintu i zadań
   const { data: sprint } = await supabase.from('sprints').select('*').eq('id', sprintId).single()
   const { data: tasks } = await supabase.from('tasks').select('*').eq('sprint_id', sprintId)
   
   if (!sprint) notFound()
 
-  // 2. Pobieranie członków i ich profili (aby mieć awatary na tablicy)
   const { data: membersRaw } = await supabase.from('project_members').select('user_id, role').eq('project_id', id)
   const userIds = membersRaw?.map(m => m.user_id) || []
   
@@ -24,7 +22,6 @@ export default async function SprintPage({ params }: { params: Promise<{ id: str
     .select('id, first_name, last_name, full_name, avatar_url')
     .in('id', userIds)
 
-  // Łączymy w jeden obiekt
   const allMembers = membersRaw?.map(member => ({
     ...member,
     profiles: profilesRaw?.find(p => p.id === member.user_id) || null
@@ -50,7 +47,7 @@ export default async function SprintPage({ params }: { params: Promise<{ id: str
         </div>
       </div>
 
-      {/* GŁÓWNA ZAWARTOŚĆ: Tablica i Roadmapa */}
+      {/*Tablica i Roadmapa */}
       <div className="p-4 md:p-8 space-y-12 bg-white">
         <section>
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">

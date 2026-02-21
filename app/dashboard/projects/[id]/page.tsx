@@ -32,7 +32,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // POBIERAMY DANE PROJEKTU (dodano status do select)
   const { data: project } = await supabase.from('projects').select('id, name, status, github_repo, github_token').eq('id', id).single()
   if (!project) notFound()
 
@@ -41,14 +40,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   const isManager = currentMember.role === 'manager'
 
-  // 1. POBIERAMY CZŁONKÓW
   const { data: membersRaw } = await supabase
   .from('project_members')
-  .select('user_id, role, status') // Dodajemy status
+  .select('user_id, role, status') 
   .eq('project_id', id)
-  .eq('status', 'active') // KLUCZ: Pokazuj tylko aktywnych członków
+  .eq('status', 'active') 
 
-  // 2. POBIERAMY PROFILE (Z avatar_url)
   const userIds = membersRaw?.map(m => m.user_id) || []
   const { data: profilesRaw } = await supabase
     .from('profiles')
@@ -66,7 +63,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     .eq('project_id', id)
     .order('created_at', { ascending: false })
 
-  // 3. ŁĄCZYMY DANE
   const allMembers = membersRaw?.map(member => {
     const activeTasksCount = tasks?.filter(t => t.assignee_id === member.user_id && t.status !== 'done').length || 0
 
@@ -78,7 +74,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     }
   }) || []
 
-  // Pobieranie Sprintów i Zadań
   const { data: activeSprint } = await supabase.from('sprints').select('id, name').eq('project_id', id).eq('status', 'active').maybeSingle()
   const { data: completedSprints } = await supabase.from('sprints').select('id, name, created_at').eq('project_id', id).eq('status', 'completed').order('created_at', { ascending: false })
   //const { data: tasks } = await supabase.from('tasks').select('*').eq('project_id', id).order('created_at', { ascending: false })

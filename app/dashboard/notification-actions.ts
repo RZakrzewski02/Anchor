@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-// 1. Tworzenie powiadomienia
 export async function createNotification(
   userId: string, 
   type: 'comment' | 'reply' | 'assignment' | 'invitation' | 'friend_req' | 'friend_removed', 
@@ -13,14 +12,12 @@ export async function createNotification(
 ) {
   const supabase = await createClient()
   
-  // Sprawdzamy, kto wysyła
   const { data: { user: actor } } = await supabase.auth.getUser()
   if (!actor) {
     console.error("BŁĄD POWIADOMIENIA: Brak zalogowanego użytkownika (aktora)")
     return
   }
 
-  // Logika: nie wysyłaj do samego siebie
   if (userId === actor.id) {
     console.log("Pominięto powiadomienie do samego siebie")
     return
@@ -44,7 +41,6 @@ export async function createNotification(
   }
 }
 
-// 2. Akceptacja zaproszenia do PROJEKTU
 export async function acceptInvitation(notificationId: string, projectId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -64,7 +60,6 @@ export async function acceptInvitation(notificationId: string, projectId: string
   revalidatePath('/dashboard/projects')
 }
 
-// 3. Odrzucenie zaproszenia do PROJEKTU
 export async function declineInvitation(notificationId: string, projectId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -79,14 +74,12 @@ export async function declineInvitation(notificationId: string, projectId: strin
   revalidatePath('/dashboard')
 }
 
-// 4. Oznaczenie jako przeczytane
 export async function markAsRead(notificationId: string) {
   const supabase = await createClient()
   await supabase.from('notifications').update({ is_read: true }).eq('id', notificationId)
   revalidatePath('/dashboard/notifications')
 }
 
-// 5. Usuwanie powiadomienia
 export async function deleteNotification(notificationId: string) {
   const supabase = await createClient()
   

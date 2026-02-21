@@ -24,7 +24,6 @@ export default function WorkloadChart({ members }: { members: any[] }) {
     
     return (
       <g transform={`translate(${x},${y})`}>
-        {/* ZMIANA 1: Zwiększono width, height oraz x, aby upewnić się, że tekst się zmieści */}
         <foreignObject x={-40} y={5} width={80} height={60}>
           <div className="flex flex-col items-center justify-start w-full h-full pt-1">
             <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center mb-1.5 shrink-0 shadow-sm">
@@ -34,7 +33,6 @@ export default function WorkloadChart({ members }: { members: any[] }) {
                 <User size={12} className="text-slate-400" />
               )}
             </div>
-            {/* Tekst jest teraz wyżej, ma ciaśniejszy leading, by nie wypadać poza obszar */}
             <span className="text-[11px] font-bold text-slate-500 truncate w-full text-center leading-none">
               {payload.value}
             </span>

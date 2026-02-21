@@ -5,9 +5,8 @@ import FriendsList from './friends-list'
 import ChatWindow from './chat-window'
 import { acceptFriendRequest } from './friends-actions'
 import AvatarWithStatus from './avatar-with-status'
-import RealtimeFriendsListener from './realtime-listener' // ZAIMPORTUJ TO
+import RealtimeFriendsListener from './realtime-listener'
 
-// 1. WYMUSZAMY BRAK CACHE - Liczniki będą zawsze świeże przy odświeżeniu
 export const dynamic = 'force-dynamic'
 
 export default async function FriendsPage(props: { searchParams: Promise<{ chatWith?: string }> }) {
@@ -16,7 +15,6 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // 1. POBIERAMY ZNAJOMOŚCI
   const { data: friendshipsRaw } = await supabase
     .from('friendships')
     .select('*')
@@ -25,14 +23,12 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
   const friendships = friendshipsRaw || []
   const friendIds = friendships.map(f => f.requester_id === user.id ? f.addressee_id : f.requester_id)
 
-  // 2. POBIERAMY PROFILE
   let profilesMap: Record<string, any> = {}
   if (friendIds.length > 0) {
     const { data: profiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', friendIds)
     profiles?.forEach(p => { profilesMap[p.id] = p })
   }
 
-  // 3. POBIERAMY INFORMACJE O WIADOMOŚCIACH (ostatnia wiadomość i nieprzeczytane)
   const { data: lastMessages } = await supabase
     .from('direct_messages')
     .select('sender_id, receiver_id, created_at, content')
@@ -50,7 +46,6 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
     unreadMap[msg.sender_id] = (unreadMap[msg.sender_id] || 0) + 1
   })
 
-  // 4. ŁĄCZYMY DANE I SORTUJEMY
   const friends = friendships.map(f => {
     const friendId = f.requester_id === user.id ? f.addressee_id : f.requester_id
     const profile = profilesMap[friendId]
@@ -78,7 +73,6 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
 
   const pendingRequests = friends.filter(f => f.status === 'pending' && !f.isMyRequest)
 
-  // 5. POBIERAMY WIADOMOŚCI DLA AKTYWNEGO CZATU
   let messages = []
   let activeFriend = null
   if (searchParams.chatWith) {
@@ -91,7 +85,6 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
         .order('created_at', { ascending: true })
       messages = msgs || []
 
-      // Oznaczanie jako przeczytane przy otwarciu (serwerowo)
       await supabase
         .from('direct_messages')
         .update({ is_read: true })
@@ -105,7 +98,6 @@ export default async function FriendsPage(props: { searchParams: Promise<{ chatW
 
   return (
     <div className="flex h-full bg-white overflow-hidden shadow-sm relative">
-      {/* 2. DODAJEMY SŁUCHACZA REALTIME DLA LISTY ZNAJOMYCH */}
       <RealtimeFriendsListener userId={user.id} />
 
       <div className={`${isChatOpen ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-slate-200 flex-col bg-slate-50 shrink-0 h-full pt-16 md:pt-0`}>

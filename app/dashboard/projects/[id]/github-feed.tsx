@@ -1,6 +1,5 @@
 import { Github } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
-// Importujemy nasz nowy komponent kliencki
 import GithubFeedClient from './github-feed-client'
 
 export default async function GithubActivityFeed({ 
@@ -18,7 +17,6 @@ export default async function GithubActivityFeed({
     ...(token && { 'Authorization': `Bearer ${token}` }) 
   }
 
-  // ZMIANA: Zwiększyliśmy limit do 40, aby po odfiltrowaniu zostało nam sporo stron
   const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/events?per_page=40`, {
     headers,
     next: { revalidate: 60 }
@@ -35,8 +33,6 @@ export default async function GithubActivityFeed({
   }
 
   const rawEvents = await res.json()
-
-  // ZMIANA: Odfiltrowujemy tylko wartościowe akcje od razu na serwerze!
   const validTypes = ['PushEvent', 'IssuesEvent', 'PullRequestEvent']
   const events = rawEvents.filter((e: any) => validTypes.includes(e.type))
 
@@ -59,8 +55,6 @@ export default async function GithubActivityFeed({
       <h2 className="font-bold text-slate-900 mb-6 flex items-center gap-2 shrink-0">
         <Github className="text-slate-800" size={28} /> Ostatnia aktywność
       </h2>
-
-      {/* ZMIANA: Używamy nowego komponentu klienckiego do paginacji */}
       <GithubFeedClient events={events} userMap={userMap} />
     </div>
   )

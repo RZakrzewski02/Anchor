@@ -8,7 +8,7 @@ import { addComment } from './comment-actions'
 export default function TaskComments({ taskId, currentUserId }: { taskId: string, currentUserId: string }) {
   const [comments, setComments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null) // Nowy stan błędu
+  const [error, setError] = useState<string | null>(null)
   const [newComment, setNewComment] = useState('')
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [isSending, setIsSending] = useState(false)
@@ -20,7 +20,6 @@ export default function TaskComments({ taskId, currentUserId }: { taskId: string
     console.log("Pobieranie komentarzy dla zadania:", taskId)
 
     try {
-      // 1. Pobranie komentarzy
       const { data, error: fetchError } = await supabase
         .from('task_comments')
         .select(`
@@ -43,10 +42,9 @@ export default function TaskComments({ taskId, currentUserId }: { taskId: string
         throw new Error(fetchError.message)
       }
 
-      console.log("Pobrane dane:", data) // Zobacz w konsoli (F12) co przyszło
+      console.log("Pobrane dane:", data)
 
       if (data) {
-        // Normalizacja: upewniamy się, że profiles to obiekt, a nie tablica
         const normalized = data.map((item: any) => ({
           ...item,
           profiles: Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
@@ -76,7 +74,6 @@ export default function TaskComments({ taskId, currentUserId }: { taskId: string
     if (!newComment.trim()) return
     setIsSending(true)
     
-    // Używamy Server Action do zapisu
     const result = await addComment(taskId, newComment, parentId)
     
     if (result?.error) {
@@ -84,7 +81,6 @@ export default function TaskComments({ taskId, currentUserId }: { taskId: string
     } else {
       setNewComment('')
       setReplyingTo(null)
-      // Wymuszamy odświeżenie po chwili
       setTimeout(fetchComments, 500)
     }
     setIsSending(false)

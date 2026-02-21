@@ -12,7 +12,6 @@ export default async function RegisterPage({
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 font-sans">
       <div className="max-w-md w-full">
-        {/* Sekcja nagłówka */}
         <div className="flex flex-col items-center mb-8 text-center">
           <div className="bg-blue-600 p-3 rounded-xl mb-4 shadow-lg shadow-blue-200">
             <Anchor className="text-white" size={32} />
@@ -21,7 +20,6 @@ export default async function RegisterPage({
           <p className="text-slate-500 mt-2 font-medium">Dołącz do aplikacji Anchor</p>
         </div>
 
-        {/* Kontener formularza */}
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
           {params.success ? (
             <div className="text-center py-4 text-slate-900">
@@ -40,7 +38,6 @@ export default async function RegisterPage({
                 </div>
               )}
 
-              {/* Pole Imie */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-800 uppercase">Imię</label>
                 <input 
@@ -51,7 +48,6 @@ export default async function RegisterPage({
                 />
               </div>
 
-              {/* Pole Nazwisko */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-800 uppercase">Nazwisko</label>
                 <input 
@@ -62,7 +58,6 @@ export default async function RegisterPage({
                 />
               </div>
 
-              {/* Pole Email */}
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-slate-800 tracking-tight">Email</label>
                 <input
@@ -74,7 +69,6 @@ export default async function RegisterPage({
                 />
               </div>
 
-              {/* Pole Hasło */}
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-slate-800 tracking-tight">Hasło</label>
                 <input
@@ -86,7 +80,6 @@ export default async function RegisterPage({
                 />
               </div>
 
-              {/* Potwierdzenie Hasła */}
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-bold text-slate-800 tracking-tight">Potwierdź hasło</label>
                 <input

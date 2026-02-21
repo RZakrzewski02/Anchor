@@ -1,6 +1,5 @@
 'use client'
 
-// 1. Importujemy useEffect oraz createPortal
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Edit2, X, Loader2, FolderKanban, Github } from 'lucide-react'
@@ -9,8 +8,6 @@ import { updateProject } from './actions'
 export default function EditProjectButton({ project }: { project: any }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  
-  // 2. Stan mounted, by portal bezpiecznie wyrenderował się w Next.js (tylko na kliencie)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -50,15 +47,13 @@ export default function EditProjectButton({ project }: { project: any }) {
       >
         <Edit2 size={18} />
       </button>
-
-      {/* 3. Używamy createPortal i teleportujemy modal na zewnątrz Linku do document.body */}
       {isOpen && mounted && createPortal(
         <div 
           onClick={handleClose} 
           className="fixed inset-0 z-9999 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 cursor-default"
         >
           <div 
-            onClick={(e) => e.stopPropagation()} // Zapobiega zamknięciu przy kliknięciu w modal (odcina kliknięcia dla Portalu)
+            onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 relative overflow-hidden text-slate-900"
           >
             {/* Nagłówek modala */}

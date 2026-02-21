@@ -1,11 +1,8 @@
-// app/dashboard/layout.tsx
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/app/dashboard/sidebar'
 import { redirect } from 'next/navigation'
 import PresenceProvider from './friends/presence-provider'
 import RealtimeNotificationsListener from './notifications-listener'
-
-// DODAJ TĘ LINIĘ NA GÓRZE PLIKU:
 export const dynamic = 'force-dynamic' 
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +12,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
 
-  // Pobieramy liczbę nieprzeczytanych powiadomień
   const { count } = await supabase
     .from('notifications')
     .select('*', { count: 'exact', head: true })

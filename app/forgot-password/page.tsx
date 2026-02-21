@@ -12,7 +12,6 @@ export default async function ForgotPasswordPage({
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 font-sans">
       <div className="max-w-md w-full">
-        {/* Nagłówek */}
         <div className="flex flex-col items-center mb-8 text-center">
           <div className="bg-blue-600 p-3 rounded-xl mb-4 shadow-lg shadow-blue-200">
             <Anchor className="text-white" size={32} />
@@ -21,7 +20,6 @@ export default async function ForgotPasswordPage({
           <p className="text-slate-500 mt-2 font-medium">Wpisz swój email, aby otrzymać link do resetowania.</p>
         </div>
 
-        {/* Kontener formularza */}
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
           {params.success ? (
             <div className="text-center py-4">

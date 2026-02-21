@@ -22,7 +22,6 @@ export default function AvatarUpload({ userId, avatarUrl }: AvatarUploadProps) {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // 1. Podgląd lokalny (natychmiastowy)
     const objectUrl = URL.createObjectURL(file)
     setPreviewUrl(objectUrl)
 
@@ -30,24 +29,19 @@ export default function AvatarUpload({ userId, avatarUrl }: AvatarUploadProps) {
       setIsUploading(true)
       
       const fileExt = file.name.split('.').pop()
-      // KLUCZOWA ZMIANA: Unikalna nazwa pliku za każdym razem (np. avatar-17078234234.png)
-      // Dzięki temu URL się zmienia i cache przeglądarki jest pomijany.
       const fileName = `avatar-${Date.now()}.${fileExt}`
       const filePath = `${userId}/${fileName}`
 
-      // 2. Upload nowego pliku
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file)
 
       if (uploadError) throw uploadError
 
-      // 3. Pobranie nowego publicznego URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath)
 
-      // 4. Aktualizacja profilu w bazie nowym linkiem
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
@@ -55,13 +49,12 @@ export default function AvatarUpload({ userId, avatarUrl }: AvatarUploadProps) {
 
       if (updateError) throw updateError
 
-      // 5. Odświeżenie aplikacji (Sidebar pobierze nowy URL z bazy)
       router.refresh()
 
     } catch (error) {
       console.error('Błąd uploadu:', error)
       alert('Nie udało się zmienić zdjęcia.')
-      setPreviewUrl(avatarUrl || null) // Cofnij zmiany w razie błędu
+      setPreviewUrl(avatarUrl || null)
     } finally {
       setIsUploading(false)
     }

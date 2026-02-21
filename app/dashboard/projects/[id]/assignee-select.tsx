@@ -10,11 +10,9 @@ export default function AssigneeSelect({ members, selectedId, onSelect, currentU
   const selectedMember = members.find((m: any) => m.user_id === selectedId)
   const selectedProfile = selectedMember?.profiles
 
-  // --- NOWE: ALGORYTM REKOMENDACJI I SORTOWANIA ---
   const sortedMembers = useMemo(() => {
     if (!members) return []
 
-    // 1. Wzbogacamy każdego członka o jego zliczony LVL i taskCount
     const enrichedMembers = members.map((m: any) => {
       const specStats = m.experience?.find((e: any) => e.specialization === taskSpecialization)
       const exp = specStats?.exp || 0
@@ -24,13 +22,10 @@ export default function AssigneeSelect({ members, selectedId, onSelect, currentU
       return { ...m, calculatedLevel: level, calculatedTaskCount: taskCount }
     })
 
-    // 2. Sortujemy listę
     return enrichedMembers.sort((a: any, b: any) => {
-      // Priorytet 1: Najwyższy poziom (LVL) malejąco
       if (b.calculatedLevel !== a.calculatedLevel) {
         return b.calculatedLevel - a.calculatedLevel
       }
-      // Priorytet 2: W przypadku remisu poziomów, wygrywa ten z MNIEJSZĄ ilością zadań
       return a.calculatedTaskCount - b.calculatedTaskCount
     })
   }, [members, taskSpecialization])
@@ -84,16 +79,13 @@ export default function AssigneeSelect({ members, selectedId, onSelect, currentU
               -- Brak przypisania --
             </div>
 
-            {/* Renderujemy POSORTOWANĄ listę użytkowników */}
             {sortedMembers.map((m: any, index: number) => {
               const p = m.profiles
               const isSelected = m.user_id === selectedId
               
-              // Odczytujemy wcześniej wyliczone wartości
               const level = m.calculatedLevel
               const taskCount = m.calculatedTaskCount
 
-              // Najlepszy kandydat to pierwszy na posortowanej liście
               const isRecommended = index === 0 && members.length > 0;
 
               return (
@@ -113,7 +105,6 @@ export default function AssigneeSelect({ members, selectedId, onSelect, currentU
                           <User size={14} className="text-slate-400" />
                         )}
                       </div>
-                      {/* Złota gwiazdka dla najlepszego kandydata nakładana na avatar */}
                       {isRecommended && (
                         <div className="absolute -bottom-1 -right-1 bg-amber-400 text-white p-0.5 rounded-full border-2 border-white shadow-sm">
                           <Sparkles size={10} />
@@ -134,8 +125,6 @@ export default function AssigneeSelect({ members, selectedId, onSelect, currentU
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0 pl-2">
-                    
-                    {/* PLAKIETKA ILOŚCI ZADAŃ */}
                     <div 
                       className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-black uppercase border transition-colors ${
                         taskCount > 5 
@@ -148,7 +137,6 @@ export default function AssigneeSelect({ members, selectedId, onSelect, currentU
                       {taskCount}
                     </div>
 
-                    {/* PLAKIETKA LVL */}
                     <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-black uppercase border border-blue-200 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-500 transition-colors">
                       <Zap size={10} className={level > 0 ? "fill-current" : ""} />
                       LVL {level}

@@ -16,12 +16,10 @@ export default function TaskCommentsModal({
 }) {
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      {/* Kliknięcie w tło zamyka modal */}
       <div className="absolute inset-0" onClick={onClose} />
       
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 relative flex flex-col max-h-[80vh]">
         
-        {/* NAGŁÓWEK MODALA */}
         <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
@@ -42,7 +40,6 @@ export default function TaskCommentsModal({
           </button>
         </div>
 
-        {/* TREŚĆ (LISTA KOMENTARZY) */}
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
           <TaskComments taskId={taskId} currentUserId={currentUserId} />
         </div>

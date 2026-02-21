@@ -7,13 +7,11 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string; message?: string }>
 }) {
-  // Obsługa asynchronicznych searchParams (wymóg Next.js 15)
   const params = await searchParams
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 font-sans">
       <div className="max-w-md w-full">
-        {/* Nagłówek i Logo */}
         <div className="flex flex-col items-center mb-8 text-center">
           <div className="bg-blue-600 p-3 rounded-xl mb-4 shadow-lg shadow-blue-200">
             <Anchor className="text-white" size={32} />
@@ -22,17 +20,14 @@ export default async function LoginPage({
           <p className="text-slate-500 mt-2 font-medium">Zaloguj się do swojego konta Anchor</p>
         </div>
 
-        {/* Formularz logowania */}
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
           <form action={login} className="flex flex-col gap-5">
-            {/* Wyświetlanie błędów */}
             {params.error && (
               <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-100 font-bold">
                 {params.error}
               </div>
             )}
             
-            {/* Wyświetlanie komunikatów (np. po rejestracji) */}
             {params.message && (
               <div className="bg-blue-50 text-blue-700 p-4 rounded-lg text-sm border border-blue-100 font-semibold text-center">
                 {params.message}
@@ -66,7 +61,6 @@ export default async function LoginPage({
               />
             </div>
 
-            {/* Przycisk z łapką i wyraźnym tekstem */}
             <button
               type="submit"
               className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-md shadow-blue-100 active:scale-[0.98] cursor-pointer"

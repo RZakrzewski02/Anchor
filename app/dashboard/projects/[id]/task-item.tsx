@@ -17,17 +17,18 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
   const [selectedAssignee, setSelectedAssignee] = useState(task.assignee_id || 'unassigned')
   const [currentSpecialization, setCurrentSpecialization] = useState(task.specialization || 'frontend')
   const [isSaving, setIsSaving] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const assignee = members.find((m: any) => m.user_id === task.assignee_id)
   const assigneeProfile = Array.isArray(assignee?.profiles) ? assignee.profiles[0] : assignee?.profiles;
 
-  const handleDelete = async () => {
-    if (!confirm('Czy na pewno chcesz usunąć to zadanie?')) return
+  const confirmDelete = async () => {
     setIsDeleting(true)
     const result = await deleteTask(projectId, task.id)
     if (result?.error) {
       alert("Błąd: " + result.error)
       setIsDeleting(false)
+      setShowDeleteModal(false)
     }
   }
 
@@ -39,13 +40,27 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
     setIsMoving(false)
   }
 
-  // Funkcja obsługująca zapis edycji
   async function handleUpdate(formData: FormData) {
     setIsSaving(true)
     await updateTask(projectId, task.id, formData)
     setIsSaving(false)
     setIsEditing(false)
   }
+
+  const googleCalendarLink = () => {
+    const baseUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE";
+    const title = encodeURIComponent(`Zadanie: ${task.title}`);
+    const details = encodeURIComponent(task.description || "Brak opisu");
+    
+    let dates = "";
+    if (task.start_date && task.end_date) {
+      const start = task.start_date.replace(/-/g, "");
+      const end = task.end_date.replace(/-/g, "");
+      dates = `&dates=${start}/${end}`;
+    }
+
+    return `${baseUrl}&text=${title}&details=${details}${dates}`;
+  };
 
   return (
     <>
@@ -93,7 +108,17 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
             </button>
           )}
 
-          <button onClick={() => setShowComments(true)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all md:opacity-0 group-hover:opacity-100 cursor-pointer" title="Komentarze">
+          <a 
+            href={googleCalendarLink()} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="p-2 text-slate-400 hover:text-blue-500 hover:bg-green-50 rounded-lg transition-all md:opacity-0 group-hover:opacity-100 cursor-pointer flex items-center" 
+            title="Dodaj do Kalendarza Google"
+          >
+            <Calendar size={16} />
+          </a>
+
+          <button onClick={() => setShowComments(true)} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-indigo-50 rounded-lg transition-all md:opacity-0 group-hover:opacity-100 cursor-pointer" title="Komentarze">
             <MessageSquare size={16} />
           </button>
 
@@ -101,13 +126,65 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
             <Edit2 size={16} />
           </button>
 
-          <button onClick={handleDelete} disabled={isDeleting} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all md:opacity-0 group-hover:opacity-100 cursor-pointer" title="Usuń">
+          <button 
+            onClick={() => setShowDeleteModal(true)} 
+            disabled={isDeleting} 
+            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all md:opacity-0 group-hover:opacity-100 cursor-pointer" 
+            title="Usuń"
+          >
             {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
           </button>
         </div>
       </div>
 
-      {/* MODAL KOMENTARZY (BEZ ZMIAN) */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-99 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 relative overflow-hidden">
+            
+            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-red-50/50">
+              <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
+                <Trash2 className="text-red-500" size={20} /> Usuń zadanie
+              </h3>
+              <button 
+                onClick={() => setShowDeleteModal(false)} 
+                disabled={isDeleting}
+                className="text-slate-400 hover:text-slate-700 p-2 rounded-full hover:bg-white transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                Czy na pewno chcesz trwale usunąć zadanie <strong>{task.title}</strong>? <br/><br/>
+                Tej operacji nie można cofnąć, a wszystkie komentarze i załączniki do tego zadania również zostaną usunięte.
+              </p>
+
+              <div className="flex gap-3 pt-2 mt-2 border-t border-slate-100">
+                <button 
+                  type="button" 
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={isDeleting}
+                  className="flex-1 bg-white border border-slate-300 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Anuluj
+                </button>
+                <button 
+                  onClick={confirmDelete}
+                  disabled={isDeleting} 
+                  className="flex-2 bg-red-600 text-white font-bold py-3 rounded-xl hover:bg-red-700 transition-all shadow-md flex justify-center items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isDeleting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                  {isDeleting ? 'Usuwanie...' : 'Tak, usuń zadanie'}
+                </button>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KOMENTARZY */}
       {showComments && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="absolute inset-0" onClick={() => setShowComments(false)} />
@@ -127,7 +204,7 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
         </div>
       )}
 
-      {/* MODAL EDYCJI - TERAZ IDENTYCZNY JAK TWORZENIE */}
+      {/* MODAL EDYCJI */}
       {isEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg border border-slate-200 relative">
@@ -190,7 +267,7 @@ export default function TaskItem({ task, members, projectId, currentUserId, acti
                 </div>
               </div>
 
-              {/* Przypisywanie (AssigneeSelect) */}
+              {/* Przypisywanie */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><User size={14}/> Przypisz do</label>
                 <AssigneeSelect 

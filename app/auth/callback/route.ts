@@ -14,6 +14,5 @@ export async function GET(request: Request) {
     }
   }
 
-  // W razie błędu wróć do logowania
   return NextResponse.redirect(`${origin}/login?error=Session expired or invalid`)
 }

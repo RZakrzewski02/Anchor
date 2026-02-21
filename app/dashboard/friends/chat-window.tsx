@@ -18,7 +18,6 @@ export default function ChatWindow({
   const [chatMessages, setChatMessages] = useState(initialMessages)
   const [inputValue, setInputValue] = useState('')
   
-  // Stany do usuwania znajomego
   const [showRemoveModal, setShowRemoveModal] = useState(false)
   const [isRemoving, setIsRemoving] = useState(false)
   
@@ -33,7 +32,6 @@ export default function ChatWindow({
     setChatMessages(initialMessages)
   }, [initialMessages, friendId])
 
-  // SUBSKRYPCJA REALTIME
   useEffect(() => {
     const channel = supabase
       .channel(`chat_${friendId}`)
@@ -93,17 +91,15 @@ export default function ChatWindow({
     await sendMessage(friendId, content)
   }
 
-  // Funkcja usuwająca znajomego
   const handleRemoveFriend = async () => {
     setIsRemoving(true)
-    const result = await removeFriend(friendId) // Wywołanie akcji serwerowej
+    const result = await removeFriend(friendId)
     setIsRemoving(false)
     
     if (result?.error) {
       alert("Błąd: " + result.error)
     } else {
       setShowRemoveModal(false)
-      // Po usunięciu wracamy na ogólną listę znajomych
       router.push('/dashboard/friends')
       router.refresh()
     }
@@ -111,11 +107,7 @@ export default function ChatWindow({
 
   return (
     <div className="flex flex-col h-full bg-slate-50 relative">
-      
-      {/* NAGŁÓWEK CZATU */}
       <div className="p-3 border-b border-slate-200 flex items-center justify-between bg-white shadow-sm z-10 shrink-0">
-        
-        {/* Lewa strona: Powrót, Awatar, Nazwa */}
         <div className="flex items-center gap-2 md:gap-3 min-w-0">
           <Link 
             href="/dashboard/friends" 
@@ -143,7 +135,6 @@ export default function ChatWindow({
           </div>
         </div>
 
-        {/* Prawa strona: Akcje (Profil i Usunięcie) */}
         <div className="flex items-center gap-1 shrink-0 ml-4">
           <Link 
             href={`/dashboard/users/${friendId}`}
@@ -194,7 +185,6 @@ export default function ChatWindow({
         <div ref={bottomRef} />
       </div>
 
-      {/* POLE WPISYWANIA */}
       <div className="p-3 bg-white border-t border-slate-200 shrink-0 pb-safe">
         <form onSubmit={handleSend} className="flex gap-2 items-end">
           <textarea 
@@ -220,7 +210,6 @@ export default function ChatWindow({
         </form>
       </div>
 
-      {/* MODAL USUWANIA ZNAJOMEGO */}
       {showRemoveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 relative overflow-hidden text-slate-900">

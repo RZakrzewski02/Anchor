@@ -1,7 +1,6 @@
 'use client'
 
 import { usePresence } from './presence-provider'
-// 1. Importujemy ikonę User
 import { User } from 'lucide-react'
 
 type Props = {
@@ -25,12 +24,10 @@ export default function AvatarWithStatus({ userId, avatarUrl, fullName, isActive
         {avatarUrl ? (
           <img src={avatarUrl} className="w-full h-full object-cover" alt={fullName} />
         ) : (
-          /* 2. ZMIANA: Usunięto fullName[0] i wstawiono ikonę User */
           <User size={isActiveChat ? 20 : 18} />
         )}
       </div>
       
-      {/* Kropka statusu */}
       <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white rounded-full transition-colors duration-300 ${
         online ? 'bg-green-500' : 'bg-slate-300'
       }`} title={online ? 'Dostępny' : 'Niedostępny'}></div>

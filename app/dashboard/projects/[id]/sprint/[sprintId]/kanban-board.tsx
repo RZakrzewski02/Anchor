@@ -3,10 +3,8 @@
 import { useState } from 'react'
 import { updateTaskStatus } from '../../task-actions'
 import { useRouter } from 'next/navigation'
-// ZMIANA: Importujemy ikonki
 import { User, Calendar, AlignLeft } from 'lucide-react' 
 
-// ZMIANA: Dodajemy members do propsów
 export default function KanbanBoard({ tasks, projectId, members }: { tasks: any[], projectId: string, members: any[] }) {
   const router = useRouter()
   const [draggingId, setDraggingId] = useState<string | null>(null)
@@ -29,7 +27,6 @@ export default function KanbanBoard({ tasks, projectId, members }: { tasks: any[
     router.refresh()
   }
 
-  // Funkcja skracająca format daty (np. 2024-05-12 -> 12.05)
   const formatShortDate = (dateString: string) => {
     if (!dateString) return ''
     const d = new Date(dateString)
@@ -55,7 +52,6 @@ export default function KanbanBoard({ tasks, projectId, members }: { tasks: any[
 
           <div className="space-y-3 flex-1">
             {tasks.filter(t => t.status === col.id).map(task => {
-              // Szukamy profilu osoby przypisanej do zadania
               const assignee = members?.find(m => m.user_id === task.assignee_id)?.profiles;
 
               return (
@@ -65,14 +61,12 @@ export default function KanbanBoard({ tasks, projectId, members }: { tasks: any[
                   onDragStart={(e) => onDragStart(e, task.id)}
                   className={`bg-white p-4 rounded-xl border border-slate-200 shadow-sm cursor-grab active:cursor-grabbing hover:border-blue-400 hover:shadow-md transition-all flex flex-col gap-3 ${draggingId === task.id ? 'opacity-50 scale-95' : ''}`}
                 >
-                  {/* Nagłówek karty: Specjalizacja */}
                   <div className="flex justify-between items-start gap-2">
                     <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-200">
                       {task.specialization || 'Zadanie'}
                     </span>
                   </div>
                   
-                  {/* Tytuł i krótki opis */}
                   <div>
                     <h4 className="font-bold text-sm text-slate-800 leading-snug">{task.title}</h4>
                     {task.description && (
@@ -83,7 +77,6 @@ export default function KanbanBoard({ tasks, projectId, members }: { tasks: any[
                     )}
                   </div>
 
-                  {/* Stopka karty: Daty i Awatar */}
                   <div className="flex items-center justify-between mt-1 pt-3 border-t border-slate-50">
                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400">
                       {task.end_date ? (
@@ -96,7 +89,6 @@ export default function KanbanBoard({ tasks, projectId, members }: { tasks: any[
                       )}
                     </div>
 
-                    {/* Awatar z Tooltipem */}
                     <div 
                       className="w-6 h-6 rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 shadow-sm" 
                       title={assignee?.full_name || 'Nieprzypisane'}

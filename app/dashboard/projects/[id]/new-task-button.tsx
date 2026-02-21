@@ -23,8 +23,6 @@ export default function NewTaskButton({
   const [isOpen, setIsOpen] = useState(false)
   const [selectedAssignee, setSelectedAssignee] = useState('unassigned')
   const [isLoading, setIsLoading] = useState(false)
-  
-  // NOWE: Stan do śledzenia wybranej specjalizacji "w locie"
   const [currentSpecialization, setCurrentSpecialization] = useState('frontend')
 
   async function handleSubmit(formData: FormData) {
@@ -37,7 +35,7 @@ export default function NewTaskButton({
     } else {
       setIsOpen(false)
       setSelectedAssignee('unassigned')
-      setCurrentSpecialization('frontend') // Reset specjalizacji po sukcesie
+      setCurrentSpecialization('frontend')
     }
   }
 
@@ -70,7 +68,6 @@ export default function NewTaskButton({
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><Tag size={14}/> Specjalizacja</label>
-                {/* ZMIANA: Pole select jest teraz kontrolowane przez stan currentSpecialization */}
                 <select 
                   name="specialization" 
                   value={currentSpecialization}
@@ -102,7 +99,6 @@ export default function NewTaskButton({
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2"><User size={14}/> Przypisz do</label>
-                {/* ZMIANA: Przekazujemy taskSpecialization={currentSpecialization} */}
                 <AssigneeSelect 
                   name="assignee_id"
                   members={members}
