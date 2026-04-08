@@ -35,10 +35,26 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const { data: project } = await supabase.from('projects').select('id, name, status, github_repo, github_token').eq('id', id).single()
   if (!project) notFound()
 
-  const { data: currentMember } = await supabase.from('project_members').select('role').eq('project_id', id).eq('user_id', user.id).single()
-  if (!currentMember) redirect('/dashboard/projects')
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  
+  const isAdmin = profile?.role === 'admin'
 
-  const isManager = currentMember.role === 'manager'
+  const { data: currentMember } = await supabase
+    .from('project_members')
+    .select('role')
+    .eq('project_id', id)
+    .eq('user_id', user.id)
+    .maybeSingle() 
+
+  if (!currentMember && !isAdmin) {
+    redirect('/dashboard/projects')
+  }
+  
+  const isManager = currentMember?.role === 'manager' || isAdmin
 
   const { data: membersRaw } = await supabase
   .from('project_members')
@@ -76,7 +92,6 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   const { data: activeSprint } = await supabase.from('sprints').select('id, name').eq('project_id', id).eq('status', 'active').maybeSingle()
   const { data: completedSprints } = await supabase.from('sprints').select('id, name, created_at').eq('project_id', id).eq('status', 'completed').order('created_at', { ascending: false })
-  //const { data: tasks } = await supabase.from('tasks').select('*').eq('project_id', id).order('created_at', { ascending: false })
 
   const sprintTasks = tasks?.filter(t => t.sprint_id === activeSprint?.id && t.sprint_id !== null) || []
   const backlogTasks = tasks?.filter(t => !t.sprint_id) || []
@@ -87,7 +102,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   return (
     <div className="flex flex-col h-full font-sans bg-white text-slate-900">
       
-      {/* --- NOWY NAGŁÓWEK PROJEKTU --- */}
+      {/* --- NAGŁÓWEK PROJEKTU --- */}
       <div className="p-4 md:p-6 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center bg-white relative lg:sticky lg:top-0 lg:z-40 shadow-sm gap-4">
         <div className="flex items-center gap-4 min-w-0">
           <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl shrink-0">
