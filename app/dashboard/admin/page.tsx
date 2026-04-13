@@ -62,7 +62,6 @@ export default async function AdminPage(props: {
           </h2>
         </div>
 
-        {/* Pasek wyszukiwania */}
         <form method="GET" className="p-4 border-b bg-white flex items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -113,7 +112,6 @@ export default async function AdminPage(props: {
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    {/* Wstawiony nowy komponent Modala */}
                     <MembersModal projectId={project.id} projectName={project.name} />
 
                     <Link 

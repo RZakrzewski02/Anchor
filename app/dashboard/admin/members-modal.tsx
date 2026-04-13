@@ -17,7 +17,6 @@ export default function MembersModal({ projectId, projectName }: { projectId: st
     setIsLoading(true)
 
     try {
-      // KROK 1: Pobieramy członków projektu
       const { data: membersData, error: membersError } = await supabase
         .from('project_members')
         .select('*')
@@ -26,30 +25,25 @@ export default function MembersModal({ projectId, projectName }: { projectId: st
       if (membersError) throw membersError
 
       if (membersData && membersData.length > 0) {
-        // KROK 2: Wyciągamy z wyników same numery user_id (żeby wiedzieć, kogo szukać)
         const userIds = membersData.map((m) => m.user_id)
 
-        // KROK 3: Pobieramy tylko te profile, które należą do członków tego projektu
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, full_name, first_name, last_name')
-          .in('id', userIds) // .in() działa jak SQL-owe WHERE id IN (...)
+          .in('id', userIds)
 
         if (profilesError) throw profilesError
 
-        // KROK 4: Łączymy dane w jedną tablicę, którą zrozumie nasz interfejs (Modal)
         const mergedMembers = membersData.map((member) => {
-          // Szukamy profilu pasującego do tego członka
           const profile = profilesData?.find((p) => p.id === member.user_id)
           return {
             ...member,
-            profiles: profile || null // Doklejamy dane profilu pod kluczem 'profiles'
+            profiles: profile || null
           }
         })
 
         setMembers(mergedMembers)
       } else {
-        // Jeśli projekt nie ma członków
         setMembers([])
       }
     } catch (err: any) {
@@ -63,12 +57,10 @@ export default function MembersModal({ projectId, projectName }: { projectId: st
   const toggleRole = async (memberId: string, currentRole: string) => {
     const newRole = currentRole === 'manager' ? 'member' : 'manager'
     
-    // Optymistyczna aktualizacja UI (żeby użytkownik nie musiał czekać na odświeżenie)
     setMembers(current => 
       current.map(m => m.id === memberId ? { ...m, role: newRole } : m)
     )
 
-    // Aktualizacja w bazie danych
     await supabase
       .from('project_members')
       .update({ role: newRole })
@@ -112,7 +104,6 @@ export default function MembersModal({ projectId, projectName }: { projectId: st
                   {members.map((member) => (
                     <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
                       <div>
-                        {/* Wyświetlanie danych z połączonej tabeli profiles */}
                         <p className="font-medium text-gray-900 text-sm">
                           {member.profiles?.full_name || 
                            (member.profiles?.first_name ? `${member.profiles.first_name} ${member.profiles.last_name || ''}` : null) || 
